@@ -623,13 +623,6 @@ def test_post():
 def health():
     return jsonify({"status": "✅ Server is up"}), 200
 
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def serve_frontend(path):
-    dist_dir = os.path.join(BASE_DIR, "frontend", "website", "dist")
-    if path and os.path.exists(os.path.join(dist_dir, path)):
-        return send_from_directory(dist_dir, path)
-    return send_from_directory(dist_dir, "index.html")
 
 
 @app.route("/")
