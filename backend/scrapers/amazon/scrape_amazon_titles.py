@@ -38,12 +38,14 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 
 service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options)
+#driver = webdriver.Chrome(service=service, options=chrome_options)
+print("⚠️ Running fallback mode — scraper disabled on remote deployment.")
+fallback_mode = True
 
 # Quick test
-driver.get("https://www.google.com")
-print(driver.title)
-driver.quit()
+#driver.get("https://www.google.com")
+#print(driver.title)
+#driver.quit()
 
 # === Load custom brand location metadata ===
 
