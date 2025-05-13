@@ -1,0 +1,55 @@
+# Node.js
+node_modules/
+
+# Selenium
+selenium_profile/
+
+# Python
+__pycache__/
+*.pyc
+
+# Data files
+*.csv
+*.json
+!package.json
+!package-lock.json
+
+# Environment
+.env
+
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.env
+.venv/
+*.pkl
+*.joblib
+
+# === Node ===
+node_modules/
+dist/
+*.log
+.env.local
+.vite/
+
+# === Mac & VS Code ===
+.DS_Store
+.vscode/
+
+# === Frontend ===
+frontend/website/dist/
+frontend/extension/dist/
+
+# === Common ===
+*.csv
+common/data/csv/*
+!common/data/csv/eco_dataset.csv  # keep this one if needed
+
+# === Models ===
+backend/ml/models/*
+!backend/ml/models/eco_model.pkl
+backend/ml/encoders/*
+!backend/ml/encoders/*.pkl
