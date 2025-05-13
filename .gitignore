@@ -10,7 +10,7 @@ __pycache__/
 
 # Data files
 
-*.json
+
 !package.json
 !package-lock.json
 
@@ -48,7 +48,12 @@ frontend/extension/dist/
 # keep this one if needed
 
 # === Models ===
-backend/ml/models/*
-!backend/ml/models/eco_model.pkl
-backend/ml/encoders/*
-!backend/ml/encoders/*.pkl
+
+# === Keep specific files ===
+!backend/scrapers/brand_origins.csv
+!common/data/csv/defra_material_intensity.csv
+!frontend/extension/material_insights.json
+!ml_model/
+!ml_model/*.json
+!ml_model/*.pkl
+
