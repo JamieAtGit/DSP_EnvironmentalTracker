@@ -16,11 +16,11 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Copy project files
+# Copy entire project into container
 COPY . .
 
-# Expose the port (matches Flask app)
+# Expose the port your Flask app runs on
 EXPOSE 5000
 
-# Run the Flask app
-CMD ["python", "app.py"]
+# Run the Flask app from the correct path
+CMD ["python", "backend/api/app.py"]
