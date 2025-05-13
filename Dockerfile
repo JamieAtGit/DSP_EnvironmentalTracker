@@ -1,26 +1,26 @@
-# Use an official lightweight Python image
 FROM python:3.11-slim
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set work directory
+# Set working directory
 WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y gcc
 
-# Install Python dependencies
-COPY requirements.txt .
+# Copy all project files
+COPY . .
+
+# Install dependencies
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Copy entire project into container
-COPY . .
+# Set working directory to where app.py lives
+WORKDIR /app/backend/api
 
-# Expose the port your Flask app runs on
+# Expose Flask port
 EXPOSE 5000
 
-# Run the Flask app from the correct path
-CMD ["python", "backend/api/app.py"]
+# Start Flask
+CMD ["python", "app.py"]
