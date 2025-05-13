@@ -1,7 +1,5 @@
 [build]
-  base = "frontend/website"
-  publish = "frontend/website/dist"
-  command = "npm run build"
-
-[context.production.environment]
-  VITE_API_BASE_URL = "https://dsp-environmentaltracker.onrender.com/"
+base = "frontend/website"
+publish = "dist"
+command = "npm run build"
+functions = "netlify/functions"
