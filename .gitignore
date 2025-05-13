@@ -9,7 +9,7 @@ __pycache__/
 *.pyc
 
 # Data files
-*.csv
+
 *.json
 !package.json
 !package-lock.json
@@ -44,9 +44,8 @@ frontend/website/dist/
 frontend/extension/dist/
 
 # === Common ===
-*.csv
-common/data/csv/*
-!common/data/csv/eco_dataset.csv  # keep this one if needed
+
+# keep this one if needed
 
 # === Models ===
 backend/ml/models/*
