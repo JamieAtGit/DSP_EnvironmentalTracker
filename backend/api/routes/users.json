@@ -1,0 +1,12 @@
+[
+  {
+    "username": "fakeadmin",
+    "password": "scrypt:32768:8:1$cJYILFLwKLzBRRMb$5d04b501d4f3fc7bc56b9efec745261a3212cc232b37225854697425b41c268c069f42bbb7e59429557957f47c21261c16ed1fb8e8503fe91caf85007ca7debd",
+    "role": "admin"
+  },
+  {
+    "username": "test",
+    "password": "scrypt:32768:8:1$gSjoPTsI1gUqi8o6$0d79f3188233f6adee6fbc53ec2e4ec761181c03b6b9f3b198f03c109e8d99e86ef382d55c9599e42bde08e77044c9489e61e4b66d5b40f022a46ee6b9f05c45",
+    "role": "user"
+  }
+]

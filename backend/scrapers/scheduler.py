@@ -4,7 +4,7 @@ import json
 import os
 import csv
 from datetime import datetime
-from scrape_amazon_titles import scrape_amazon_titles, is_high_confidence, Log
+from amazon.scrape_amazon_titles import scrape_amazon_titles, is_high_confidence, Log
 
 # === CONFIG ===
 priority_path = "priority_products.json"
