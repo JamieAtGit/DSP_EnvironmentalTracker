@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function AdminPage() {
   const [submissions, setSubmissions] = useState([]);
@@ -7,7 +8,7 @@ export default function AdminPage() {
   const [updatedLabel, setUpdatedLabel] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/admin/submissions", {
+    fetch(`${BASE_URL}/admin/submissions`, {
       method: "GET",
       credentials: "include", // ✅ Ensures cookies/session are sent
     })
@@ -23,7 +24,7 @@ export default function AdminPage() {
 
   const handleSave = () => {
     const item = { ...submissions[selected], true_label: updatedLabel };
-    fetch("http://localhost:5000/admin/update", {
+    fetch(`${BASE_URL}/admin/update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include", // ✅ Required for session-authenticated POST

@@ -13,6 +13,9 @@ import {
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import { useDisclosure } from "@chakra-ui/react";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+
 export default function EcoLogTable() {
   const [data, setData] = useState([]);
   const [scoreFilter, setScoreFilter] = useState("");
@@ -20,11 +23,12 @@ export default function EcoLogTable() {
   const { isOpen, onToggle } = useDisclosure(); // ✅ inside component
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/eco-data")
+    fetch(`${BASE_URL}/api/eco-data`)
       .then((res) => res.json())
       .then((rows) => setData(rows))
       .catch((err) => console.error("Error loading eco data:", err));
   }, []);
+
 
   if (!Array.isArray(data)) {
     console.error("❌ Expected array but got:", data);

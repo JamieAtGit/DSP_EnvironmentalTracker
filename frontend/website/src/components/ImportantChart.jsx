@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from "recharts";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+
 export default function ImportantChart() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/feature-importance")
+    fetch('${BASE_URL}/api/feature-importance')
       .then((res) => res.json())
       .then(setData)
       .catch((err) => console.error("Feature importances fetch error:", err));

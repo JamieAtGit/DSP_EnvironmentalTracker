@@ -8,6 +8,7 @@
 
   "host_permissions": [
     "http://localhost:5000/*",
+    "https://dsp-environmentaltracker-1.onrender.com/*",
     "https://www.amazon.co.uk/*",
     "https://www.amazon.com/*"
   ],

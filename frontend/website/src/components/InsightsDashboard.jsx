@@ -18,12 +18,15 @@ const COLORS = [
   "#f472b6", "#2dd4bf", "#facc15", "#fb923c", "#818cf8"
 ];
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+
 export default function InsightsDashboard() {
   const [scoreData, setScoreData] = useState([]);
   const [materialData, setMaterialData] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/insights")
+    fetch(`${BASE_URL}/insights`)
       .then((res) => res.json())
       .then((data) => {
         if (!Array.isArray(data)) return;

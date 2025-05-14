@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+
 export default function ModelInfoModal({ isOpen, onClose }) {
   const [metrics, setMetrics] = useState(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      fetch("http://localhost:5000/all-model-metrics")
+      fetch(`${BASE_URL}/all-model-metrics`)
         .then((res) => res.json())
         .then((data) => {
           if (

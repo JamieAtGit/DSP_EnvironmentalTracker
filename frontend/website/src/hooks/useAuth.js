@@ -1,5 +1,6 @@
 // src/hooks/useAuth.js
 import { useEffect, useState } from "react";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function useAuth() {
   const [user, setUser] = useState(() => {
@@ -10,7 +11,7 @@ export default function useAuth() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch("http://localhost:5000/me", {
+        const res = await fetch(`${BASE_URL}/me`, {
           credentials: "include"
         });
         if (res.ok) {
@@ -29,7 +30,7 @@ export default function useAuth() {
   }, []);
 
   const logout = async () => {
-    await fetch("http://localhost:5000/logout", {
+    await fetch(`${BASE_URL}/logout`, {
       method: "POST",
       credentials: "include"
     });

@@ -3,6 +3,8 @@ import ChallengeForm from "../components/ChallengeForm";
 import toast from "react-hot-toast";
 import Layout from "../components/Layout";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function PredictPage() {
   const [form, setForm] = useState({
     title: "",
@@ -22,7 +24,7 @@ export default function PredictPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/predict", {
+      const response = await fetch(`${BASE_URL}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -51,7 +53,7 @@ export default function PredictPage() {
       timestamp: new Date().toISOString(),
     };
 
-    await fetch("http://localhost:5000/api/feedback", {
+    await fetch(`${BASE_URL}/api/feedback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(feedback),
