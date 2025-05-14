@@ -10,7 +10,7 @@ export default function useAuth() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch("https://dsp-environmentaltracker-1.onrender.com/me", {
+        const res = await fetch("http://localhost:5000/me", {
           credentials: "include"
         });
         if (res.ok) {
@@ -29,7 +29,7 @@ export default function useAuth() {
   }, []);
 
   const logout = async () => {
-    await fetch("https://dsp-environmentaltracker-1.onrender.com/logout", {
+    await fetch("http://localhost:5000/logout", {
       method: "POST",
       credentials: "include"
     });

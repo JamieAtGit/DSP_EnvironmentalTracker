@@ -13,7 +13,7 @@ export default defineConfig({
         website: resolve(__dirname, 'website/index.html'),
         popup: resolve(__dirname, 'extension/src/popup/index.html'),
         background: resolve(__dirname, 'extension/src/utils/background.js'),
-        content: resolve(__dirname, 'extension/src/utils/tooltips.js'),
+        content: resolve(__dirname, 'extension/src/content/tooltip.js'),
       },
       output: {
         entryFileNames: 'assets/[name].js',

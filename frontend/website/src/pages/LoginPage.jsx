@@ -14,7 +14,7 @@ export default function LogOnPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    fetch("http://https://dsp-environmentaltracker-1.onrender.com/login", {
+    fetch("http://localhost:5000/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

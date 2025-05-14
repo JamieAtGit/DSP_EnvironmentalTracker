@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_page, haversine, origin_hubs, uk_hub
+from backend.scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_page, haversine, origin_hubs, uk_hub
 import pgeocode
 
 app = Flask(__name__)
