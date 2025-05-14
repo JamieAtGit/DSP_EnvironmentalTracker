@@ -1,7 +1,15 @@
-# Use official Python image
+# Use a lightweight Python image
 FROM python:3.11-slim
 
-# Install system dependencies for Chrome + Selenium
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PORT=5000
+
+# Set working directory in container
+WORKDIR /app
+
+# Install system dependencies for Chrome
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
@@ -31,23 +39,17 @@ RUN apt-get update && apt-get install -y \
 
 # Install Chrome
 RUN wget -q -O google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt-get install -y ./google-chrome.deb && \
-    rm google-chrome.deb
+    apt install -y ./google-chrome.deb && rm google-chrome.deb
 
-# Set display environment variable for headless
-ENV DISPLAY=:99
-
-# Set working directory
-WORKDIR /app
-
-# Copy project files
+# Copy your code from backend/ into container
 COPY . .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r backend/requirements.txt
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port your app runs on
+# Expose the Flask port
 EXPOSE 5000
 
-# Start the app with Gunicorn
+# Start your app
 CMD ["gunicorn", "api.app:app", "--bind", "0.0.0.0:5000"]
