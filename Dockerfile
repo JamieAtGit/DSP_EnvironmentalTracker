@@ -1,16 +1,17 @@
+# Use a slim Python base
 FROM python:3.11-slim
 
-# Environment variables
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies (Chrome, driver, others)
+# Install system dependencies and Chrome
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
-    unzip \
     gnupg \
-    ca-certificates \
+    unzip \
     fonts-liberation \
     libappindicator3-1 \
     libasound2 \
@@ -28,23 +29,25 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Chrome
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt-get update && apt install -y ./google-chrome-stable_current_amd64.deb && \
-    rm google-chrome-stable_current_amd64.deb
+# Install Chrome manually
+RUN wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt-get update && apt-get install -y /tmp/chrome.deb && \
+    rm /tmp/chrome.deb
 
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install dependencies
+# Copy dependency list
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app source
+# Copy source code
 COPY . .
 
-# Expose port
+# Expose port (used by gunicorn/uvicorn)
 EXPOSE 5000
 
-# Run app with Gunicorn (adjust path as needed)
+# Start the API
 CMD ["gunicorn", "backend.api.app:app", "--bind", "0.0.0.0:5000"]
