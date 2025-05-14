@@ -38,6 +38,7 @@ from flask_cors import CORS
 
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:5173",
+    "https://dsp-environmentaltracker.onrender.com",
     "https://www.amazon.co.uk",
     "https://www.amazon.com",
     "chrome-extension://lohejhmgkkmcdhnomjcpgfbeoabjncmp"
