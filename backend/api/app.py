@@ -5,6 +5,11 @@ import sys
 import os
 import os
 
+from uuid import uuid4
+from scraper_worker import load_queue, save_queue
+
+
+
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 model_dir = os.path.join(BASE_DIR, "backend", "ml", "models")
@@ -15,7 +20,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from backend.api.routes.auth import register_routes
 from backend.api.routes.api import calculate_eco_score
-from backend.api.routes.api import register_estimate_route
 
 
 import pandas as pd
@@ -39,7 +43,6 @@ from flask_cors import CORS
 
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:5173",
-    "https://dsp-environmentaltracker.onrender.com",
     "https://www.amazon.co.uk",
     "https://www.amazon.com",
     "chrome-extension://lohejhmgkkmcdhnomjcpgfbeoabjncmp"
@@ -418,196 +421,39 @@ def save_feedback():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/estimate_emissions", methods=["POST", "OPTIONS"])
+@app.route("/estimate_emissions", methods=["POST"])
 def estimate_emissions():
-    print("🔔 Route hit: /estimate_emissions")
-    if request.method == "OPTIONS":
-        return '', 201
-
     data = request.get_json()
-    if not data:
-        return jsonify({"error": "Missing JSON in request"}), 400
+    amazon_url = data.get("amazon_url")
+    job_id = str(uuid4())
 
+    job = {
+        "id": job_id,
+        "amazon_url": amazon_url,
+        "status": "queued"
+    }
+
+    queue = load_queue()
+    queue.append(job)
+    save_queue(queue)
+
+    return jsonify({"job_id": job_id, "status": "queued"})
+
+@app.route("/job_status/<job_id>", methods=["GET"])
+def job_status(job_id):
     try:
-        url = data.get("amazon_url")
-        include_packaging = data.get("include_packaging", True)
-        product = {}
+        from scraper_worker import load_results  # Or wherever load_results is
+        results = load_results()
 
-        # Attempt to scrape product if URL provided
-        if url:
-            print(f"🌍 Scraping Amazon product from: {url}")
-            product = scrape_amazon_product_page(url)
-            print("📦 Scraped product data:", json.dumps(product, indent=2))
-        else:
-            print("⚠️ No URL provided, using manual data input")
-
-        # Unified extraction of product fields (from scrape or manual)
-        title = product.get("title", data.get("title", "Unknown Product"))
-        material_raw = product.get("material_type") or data.get("material")
-        material = normalize_feature(material_raw, "Other")
-
-        # Fallback: if material is "Other" or absurdly long, extract from title
-        if material.lower() == "other" or len(material) > 30:
-            guessed = fuzzy_match_material(title)
-            if guessed.lower() != "other":
-                material = guessed
-
-
-
-        transport = normalize_feature(data.get("transport"), "Land")
-        recyclability = normalize_feature(product.get("recyclability", data.get("recyclability")), "Medium")
-        origin = normalize_feature(product.get("brand_estimated_origin", data.get("origin")), "Other")
-        dimensions = product.get("dimensions_cm")
-        raw_weight = product.get("raw_product_weight_kg")
-        estimated_weight = product.get("estimated_weight_kg")
-        origin_distance_km = float(product.get("distance_origin_to_uk") or 0)
-        uk_distance_km = float(product.get("distance_uk_to_user") or 0)
-
-        # Fallback for missing weight
-        raw_weight = raw_weight or data.get("weight")
-
-        # Estimate missing origin from title if still unknown
-        if origin in ["Unknown", "Other", None, ""] and title:
-            guessed = estimate_origin_country(title)
-            if guessed and guessed.lower() != "other":
-                print(f"🧠 Estimated origin from title: {guessed}")
-                origin = guessed
-
-        # Final weight calculation
-        try:
-            weight = float(raw_weight or estimated_weight or 0.5)
-        except:
-            weight = 0.5
-        if include_packaging:
-            weight *= 1.05
-        print(f"✅ Final product weight: {weight:.2f} kg")
-
-        # Normalization + CO2 estimate
-        material = fuzzy_match_material(material)
-        if material == "Other" and title:
-            guessed = fuzzy_match_material(title)
-            if guessed != "Other":
-                material = guessed
-
-        origin = fuzzy_match_origin(origin)
-        carbon_kg = round(weight * material_co2_map.get(material, 2.0), 2)
-
-        # Build feature vector
-        # Additional features
-        weight_log = np.log(weight + 1e-5)
-        weight_bin_encoded = 2 if weight > 0.5 else 1 if weight > 0.1 else 0
-
-        X = pd.DataFrame([[   
-        safe_encode(material, material_encoder, "Other"),
-        safe_encode(transport, transport_encoder, "Land"),
-        safe_encode(recyclability, recycle_encoder, "Medium"),
-        safe_encode(origin, origin_encoder, "Other"),
-        weight_log,
-        weight_bin_encoded
-    ]], columns=[
-        "material_encoded",
-        "transport_encoded",
-        "recycle_encoded",
-        "origin_encoded",
-        "weight_log",
-        "weight_bin_encoded"
-    ])
-
-
-        print("🧪 Final input to model:", X.values.tolist())
-        proba = model.predict_proba(X)
-        print("🧪 Model predict_proba output:", proba)
-
-        # Predict score
-        decoded_score = "C"
-        confidence = 0.0
-        try:
-            prediction = model.predict(X)[0]
-            decoded_score = label_encoder.inverse_transform([prediction])[0]
-            if decoded_score not in valid_scores:
-                decoded_score = "C"
-            if hasattr(model, "predict_proba"):
-                proba = model.predict_proba(X)
-                print("🔍 predict_proba output:", proba)
-
-                print("🔍 Model predict_proba output:", proba[0])
-
-                if proba is not None and len(proba[0]) > 0:
-                    confidence = round(max(proba[0]) * 100, 1)
-        except Exception as e:
-            print(f"⚠️ Prediction failed: {e}")
-
-        # Log full dataset
-        try:
-            with open(os.path.join(model_dir, "eco_dataset.csv"), "a", newline='', encoding="utf-8") as f:
-                csv.writer(f, quoting=csv.QUOTE_MINIMAL).writerow([
-                    title, material, f"{weight:.2f}", transport, recyclability, decoded_score, carbon_kg, origin
-                ])
-        except Exception as e:
-            print(f"⚠️ General logging failed: {e}")
-
-        # Conditionally log to real scraped dataset
-        try:
-            if url and all([
-                decoded_score in valid_scores,
-                material in material_encoder.classes_,
-                transport in transport_encoder.classes_,
-                recyclability in recycle_encoder.classes_,
-                origin in origin_encoder.classes_
-            ]):
-                with open(os.path.join(model_dir, "real_scraped_dataset.csv"), "a", newline='', encoding="utf-8") as f:
-                    csv.writer(f, quoting=csv.QUOTE_MINIMAL).writerow([
-                        title, material, f"{weight:.2f}", transport, recyclability, decoded_score, carbon_kg, origin
-                    ])
-                print("✅ Logged to real_scraped_dataset.csv")
-        except Exception as e:
-            print(f"⚠️ Clean logging failed: {e}")
-
-        # Final API response
-        emoji_map = {
-            "A+": "🌍", "A": "🌿", "B": "🍃",
-            "C": "🌱", "D": "⚠️", "E": "❌", "F": "💀"
-        }
-        
-        print("✅ Returning ML confidence:", confidence)
-        eco_score_rule = calculate_eco_score(
-            carbon_kg,
-            recyclability,
-            origin_distance_km,
-            weight
-        )
-        print("✅ Returning rule-based score:", eco_score_rule)
+        if job_id not in results:
+            return jsonify({"status": "pending"}), 202
 
         return jsonify({
-            "data": {
-                "attributes": {
-                    "eco_score_ml": decoded_score,
-                    "eco_score_confidence": round(confidence, 2),  
-                    "eco_score_rule_based": eco_score_rule, 
-                    
-                    "ml_carbon_kg": round(weight * 1.2, 2),
-                    "trees_to_offset": max(1, round(carbon_kg / 15)),
-                    "material_type": material,
-                    "weight_kg": round(weight, 2),
-                    "raw_product_weight_kg": round(float(raw_weight or estimated_weight or 0.5), 2),
-                    "transport_mode": transport,
-                    "recyclability": recyclability,
-                    "origin": origin,
-                    "dimensions_cm": dimensions,
-                    "carbon_kg": round(carbon_kg, 2),
-                    "distance_from_origin_km": origin_distance_km,
-                    "distance_from_uk_hub_km": uk_distance_km,
-                    "intl_distance_km": origin_distance_km,
-                    "uk_distance_km": uk_distance_km
-                },
-                "title": title
-            }
+            "status": "done",
+            "data": results[job_id]
         })
-        
-
 
     except Exception as e:
-        print(f"❌ Uncaught error: {e}")
         return jsonify({"error": str(e)}), 500
 
 

@@ -96,5 +96,12 @@
       "city": "Shanghai"
     },
     "fulfillment": "UK"
+  },
+  "brand: ermnois": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
   }
 }

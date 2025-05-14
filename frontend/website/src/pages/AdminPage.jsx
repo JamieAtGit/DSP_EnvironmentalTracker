@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export default function AdminPage() {
   const [submissions, setSubmissions] = useState([]);
   const [selected, setSelected] = useState(null);

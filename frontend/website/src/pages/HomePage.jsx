@@ -4,7 +4,6 @@ import PaperPlaneTrail from "../components/PaperPlaneTrail";
 import ProductImpactCard from "../components/ProductImpactCard";
 import InsightsDashboard from "../components/InsightsDashboard";
 import EcoLogTable from "../components/EcoLogTable";
-
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function HomePage() {

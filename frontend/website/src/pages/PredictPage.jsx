@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import ChallengeForm from "../components/ChallengeForm";
 import toast from "react-hot-toast";
 import Layout from "../components/Layout";
-
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function PredictPage() {

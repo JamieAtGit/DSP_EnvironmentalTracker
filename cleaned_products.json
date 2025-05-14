@@ -222,5 +222,21 @@
     "recyclability": "Unknown",
     "transport_mode": "Ship",
     "confidence": "Estimated"
+  },
+  {
+    "asin": "B0DLB41BZH",
+    "title": "Executive Office Chair, Ergonomic Home Office Desk Chair with Wheels, Thicken Armrest and Lumbar Support, Upholstered PU Leather Mid-Back for Living Room, Make-up, Studying and Gaming",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9187.5,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 19.11,
+    "raw_product_weight_kg": 18.2,
+    "dimensions_cm": "50.5 x 51 x 111 cm",
+    "material_type": null,
+    "co2_emissions": null,
+    "recyclability": "Unknown",
+    "transport_mode": "Ship",
+    "confidence": "Estimated"
   }
 ]

@@ -8,8 +8,12 @@ document.getElementById("analyze").addEventListener("click", async () => {
     return;
   }
 
+  const BASE_URL = 
+    typeof window !== "undefined" && window.location.hostname === "localhost"
+      ? "http://localhost:5000"
+      : "https://dsp-environmentaltracker-1.onrender.com";
+
   try {
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const res = await fetch(`${BASE_URL}/estimate_emissions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

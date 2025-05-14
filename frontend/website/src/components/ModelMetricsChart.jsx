@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 
 export default function ModelMetricsChart() {
   const [metrics, setMetrics] = useState(null);

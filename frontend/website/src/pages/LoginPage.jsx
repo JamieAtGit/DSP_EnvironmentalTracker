@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import Header from "../components/Header";
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function LogOnPage() {
   const [username, setUsername] = useState("");
