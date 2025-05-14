@@ -45,6 +45,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY . .
+COPY common/data/csv/defra_material_intensity.csv /app/common/data/csv/
 
 # Expose port used by Gunicorn
 EXPOSE 5000
