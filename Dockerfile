@@ -1,12 +1,10 @@
-# Use a slim Python base
 FROM python:3.11-slim
 
-# Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies and Chrome
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -29,25 +27,27 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Chrome manually
-RUN wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt-get update && apt-get install -y /tmp/chrome.deb && \
-    rm /tmp/chrome.deb
+# Download and install Chrome
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt-get update && \
+    apt-get install -y ./google-chrome-stable_current_amd64.deb && \
+    rm google-chrome-stable_current_amd64.deb
+
+# Set display port (required by Chrome)
+ENV DISPLAY=:99
 
 # Set working directory
 WORKDIR /app
 
-# Copy dependency list
+# Copy requirements and install dependencies
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code
+# Copy project files
 COPY . .
 
-# Expose port (used by gunicorn/uvicorn)
+# Expose port used by Gunicorn
 EXPOSE 5000
 
-# Start the API
+# Run the app using gunicorn
 CMD ["gunicorn", "backend.api.app:app", "--bind", "0.0.0.0:5000"]
