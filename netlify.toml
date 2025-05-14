@@ -1,6 +1,19 @@
-# netlify.toml
+[build]
+base = "frontend/extension"
+publish = "dist"
+command = "npm run build"
 
 [[redirects]]
-  from = "/api/*"
-  to = "https://dsp-environmentaltracker-1.onrender.com"
-  status = 200
+from = "/estimate_emissions"
+to = "
+https://dsp-environmentaltracker-1.onrender.com/estimate_emissions"
+status = 200
+
+[[redirects]]
+from = "/api/*"
+to = "
+https://dsp-environmentaltracker-1.onrender.com/api/:splat"
+status = 200
+
+
+
