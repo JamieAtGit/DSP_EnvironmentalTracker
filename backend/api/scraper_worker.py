@@ -1,7 +1,11 @@
-# scraper_worker.py
 import json
 import time
 import os
+import sys
+
+# Add the root directory to sys.path so imports work
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
 from uuid import uuid4
 from backend.scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_page
 
