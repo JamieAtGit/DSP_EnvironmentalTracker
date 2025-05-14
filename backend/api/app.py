@@ -15,6 +15,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from backend.api.routes.auth import register_routes
 from backend.api.routes.api import calculate_eco_score
+from backend.api.routes.api import register_estimate_route
 
 
 import pandas as pd
