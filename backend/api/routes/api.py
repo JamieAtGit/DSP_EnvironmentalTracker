@@ -4,7 +4,11 @@ from backend.scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_p
 import pgeocode
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:5173",
+    "https://dsp-environmentaltracker.onrender.com"
+])
+
 
 # Helper function to determine transport mode based on distance
 def determine_transport_mode(distance_km):
