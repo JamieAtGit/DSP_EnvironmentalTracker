@@ -1,5 +1,7 @@
 from flask import request, jsonify
-#from flask_cors import CORS
+from flask_cors import CORS
+from flask_cors import cross_origin
+
 from backend.scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_page, haversine, origin_hubs, uk_hub
 import pgeocode
 
@@ -35,8 +37,12 @@ def calculate_eco_score(carbon_kg, recyclability, distance_km, weight_kg):
     
 
 def register_estimate_route(app):
-    @app.route("/estimate_emissions", methods=["POST"])
+    @app.route("/estimate_emissions", methods=["POST", "OPTIONS"])
+    @cross_origin(origin="https://dsp-environmentaltracker.onrender.com", supports_credentials=True)
     def estimate():
+        if request.method == "OPTIONS":
+            return '', 204
+        
         data = request.get_json()
         url = data.get("amazon_url")
         postcode = data.get("postcode")
