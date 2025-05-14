@@ -5,7 +5,7 @@ export default function ModelMetricsChart() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:5000/all-model-metrics")
+    fetch("https://dsp-environmentaltracker-1.onrender.com:5000/all-model-metrics")
       .then((res) => res.json())
       .then((data) => {
         if (

@@ -23,7 +23,7 @@ export default function InsightsDashboard() {
   const [materialData, setMaterialData] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/insights")
+    fetch("https://dsp-environmentaltracker-1.onrender.cominsights")
       .then((res) => res.json())
       .then((data) => {
         if (!Array.isArray(data)) return;

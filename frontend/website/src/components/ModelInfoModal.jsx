@@ -6,7 +6,7 @@ export default function ModelInfoModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      fetch("http://localhost:5000/all-model-metrics")
+      fetch("https://dsp-environmentaltracker-1.onrender.com:5000/all-model-metrics")
         .then((res) => res.json())
         .then((data) => {
           if (

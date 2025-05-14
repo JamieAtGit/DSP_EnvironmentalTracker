@@ -9,7 +9,7 @@ document.getElementById("analyze").addEventListener("click", async () => {
   }
 
   try {
-    const res = await fetch("http://localhost:5000/estimate_emissions", {
+    const res = await fetch("https://dsp-environmentaltracker-1.onrender.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -11,6 +11,7 @@ model_dir = os.path.join(BASE_DIR, "backend", "ml", "models")
 encoders_dir = os.path.join(BASE_DIR, "backend", "ml", "encoders")
 
 import json
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from api.routes.auth import register_routes
 from api.routes.api import calculate_eco_score
@@ -37,12 +38,13 @@ from flask_cors import CORS
 
 CORS(app, origins="*") 
 
-#CORS(app, supports_credentials=True, origins=[
+CORS(app, supports_credentials=True, origins=[
+    "https://dsp-environmentaltracker-1.onrender.com"
     #"http://localhost:5173",
     #"https://www.amazon.co.uk",
     #"https://www.amazon.com",
-    #"chrome-extension://lohejhmgkkmcdhnomjcpgfbeoabjncmp"
-#])
+    "chrome-extension://lohejhmgkkmcdhnomjcpgfbeoabjncmp"
+])
 
 
 

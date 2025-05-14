@@ -7,7 +7,7 @@ export default function AdminPage() {
   const [updatedLabel, setUpdatedLabel] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/admin/submissions", {
+    fetch("https://dsp-environmentaltracker-1.onrender.com/admin/submissions", {
       method: "GET",
       credentials: "include", // ✅ Ensures cookies/session are sent
     })
@@ -23,7 +23,7 @@ export default function AdminPage() {
 
   const handleSave = () => {
     const item = { ...submissions[selected], true_label: updatedLabel };
-    fetch("http://localhost:5000/admin/update", {
+    fetch("https://dsp-environmentaltracker-1.onrender.com/admin/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include", // ✅ Required for session-authenticated POST
