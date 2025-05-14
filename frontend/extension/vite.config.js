@@ -7,7 +7,7 @@ export default defineConfig({
   base: './',
   resolve: {
     alias: {
-      '@popup': resolve(__dirname, 'popup-app/src'), // ✅ corrected alias path
+      '@popup': resolve(__dirname, 'popup-app/src'),
     },
   },
   build: {
@@ -15,7 +15,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'src/popup/index.html'),
+        popup: resolve(__dirname, 'src/popup/index.html'), // ✅ fixed key name
         content: resolve(__dirname, 'src/content/content-entry.js'),
       },
       output: {
