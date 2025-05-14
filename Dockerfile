@@ -1,10 +1,11 @@
 FROM python:3.11-slim
 
+# Prevents prompts during install
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies
+# System dependencies (including Chrome)
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -27,28 +28,33 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install Chrome
+# Install Chrome
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt-get update && \
     apt-get install -y ./google-chrome-stable_current_amd64.deb && \
     rm google-chrome-stable_current_amd64.deb
 
-# Set display port (required by Chrome)
+# Set display port for Chrome if needed
 ENV DISPLAY=:99
 
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install dependencies
+# Copy requirements and install Python packages
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
+# Copy the rest of the project
 COPY . .
+
+# Copy any critical static/data files manually if needed
 COPY common/data/csv/defra_material_intensity.csv /app/common/data/csv/
 
-# Expose port used by Gunicorn
+# Fix Python path so imports like 'from api.routes' work
+ENV PYTHONPATH="${PYTHONPATH}:/app/backend"
+
+# Expose the app port
 EXPOSE 5000
 
-# Run the app using gunicorn
+# Start the app with Gunicorn
 CMD ["gunicorn", "backend.api.app:app", "--bind", "0.0.0.0:5000"]

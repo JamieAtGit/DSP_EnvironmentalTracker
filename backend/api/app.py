@@ -13,12 +13,12 @@ encoders_dir = os.path.join(BASE_DIR, "backend", "ml", "encoders")
 import json
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from api.routes.auth import register_routes
-from api.routes.api import calculate_eco_score
+from backend.api.routes.auth import register_routes
+from backend.api.routes.api import calculate_eco_score
 
 
 import pandas as pd
-from scrapers.amazon.scrape_amazon_titles import (
+from backend.scrapers.amazon.scrape_amazon_titles import (
     scrape_amazon_product_page,
     estimate_origin_country,
     resolve_brand_origin,
