@@ -1,9 +1,7 @@
-// ✅ new - proper plugin wrapper
-import tailwindcss from '@tailwindcss/postcss';
-
+// postcss.config.js
 export default {
-  plugins: [
-    tailwindcss(),
-    require('autoprefixer'),
-  ]
-}
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
