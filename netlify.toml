@@ -1,5 +1,4 @@
-[build]
-base = "frontend/website"
-publish = "dist"
-command = "npm run build"
-functions = "netlify/functions"
+[[redirects]]
+  from = "/api/*"
+  to = "https://dsp-environmentaltracker-1.onrender.com"
+  status = 200
