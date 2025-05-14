@@ -1,13 +1,17 @@
 import json
 import time
-import os
 import sys
+import os
 
-# Add the root directory to sys.path so imports work
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+# ✅ Ensure root of project is in the Python path
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+# ✅ Now import using full path from root
+from backend.scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_page
 
 from uuid import uuid4
-from backend.scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_page
 
 QUEUE_PATH = "scrape_queue.json"
 RESULTS_PATH = "scrape_results.json"
