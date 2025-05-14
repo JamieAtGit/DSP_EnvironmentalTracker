@@ -13,8 +13,8 @@ encoders_dir = os.path.join(BASE_DIR, "backend", "ml", "encoders")
 import json
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from backend.api.routes.auth import register_routes
-from backend.api.routes.api import calculate_eco_score
+from api.routes.auth import register_routes
+from api.routes.api import calculate_eco_score
 
 
 import pandas as pd
