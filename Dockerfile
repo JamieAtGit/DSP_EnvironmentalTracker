@@ -1,11 +1,10 @@
 FROM python:3.11-slim
 
-# Prevents prompts during install
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# System dependencies (including Chrome)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -28,33 +27,29 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Chrome
+# Install Google Chrome
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt-get update && \
     apt-get install -y ./google-chrome-stable_current_amd64.deb && \
     rm google-chrome-stable_current_amd64.deb
 
-# Set display port for Chrome if needed
+# Set environment variable to support Chrome
 ENV DISPLAY=:99
 
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python packages
+# Copy and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the project
+# Copy the entire project
 COPY . .
 
-# Copy any critical static/data files manually if needed
-COPY common/data/csv/defra_material_intensity.csv /app/common/data/csv/
-
-# Fix Python path so imports like 'from api.routes' work
+# Add backend/ to Python module search path
 ENV PYTHONPATH="${PYTHONPATH}:/app/backend"
 
-# Expose the app port
+# Expose port 5000 (for Flask/Gunicorn)
 EXPOSE 5000
 
-# Start the app with Gunicorn
-CMD ["gunicorn", "backend.api.app:app", "--bind", "0.0.0.0:5000"]
+# Start the app with Gunicorn (production-ready)
+CMD ["gunicorn", "api.app:app", "--bind", "0.0.0.0:5000"]

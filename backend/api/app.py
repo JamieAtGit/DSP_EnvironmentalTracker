@@ -11,14 +11,13 @@ model_dir = os.path.join(BASE_DIR, "backend", "ml", "models")
 encoders_dir = os.path.join(BASE_DIR, "backend", "ml", "encoders")
 
 import json
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from backend.api.routes.auth import register_routes
-from backend.api.routes.api import calculate_eco_score
+from api.routes.auth import register_routes
+from api.routes.api import calculate_eco_score
 
 
 import pandas as pd
-from backend.scrapers.amazon.scrape_amazon_titles import (
+from scrapers.amazon.scrape_amazon_titles import (
     scrape_amazon_product_page,
     estimate_origin_country,
     resolve_brand_origin,
@@ -36,12 +35,14 @@ app.secret_key = "super-secret-key"
 
 from flask_cors import CORS
 
-CORS(app, supports_credentials=True, origins=[
-    "http://localhost:5173",
-    "https://www.amazon.co.uk",
-    "https://www.amazon.com",
-    "chrome-extension://lohejhmgkkmcdhnomjcpgfbeoabjncmp"
-])
+CORS(app, origins="*") 
+
+#CORS(app, supports_credentials=True, origins=[
+    #"http://localhost:5173",
+    #"https://www.amazon.co.uk",
+    #"https://www.amazon.com",
+    #"chrome-extension://lohejhmgkkmcdhnomjcpgfbeoabjncmp"
+#])
 
 
 
@@ -640,8 +641,8 @@ def test():
   #  app.run(debug=True)
    # host="0.0.0.0", port=5000,
    
-if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+#if __name__ == "__main__":
+#    import os
+#    port = int(os.environ.get("PORT", 5000))
+ #   app.run(host="0.0.0.0", port=port)
  

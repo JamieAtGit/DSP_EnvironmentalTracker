@@ -1,3 +1,5 @@
+# netlify.toml
+
 [[redirects]]
   from = "/api/*"
   to = "https://dsp-environmentaltracker-1.onrender.com"
