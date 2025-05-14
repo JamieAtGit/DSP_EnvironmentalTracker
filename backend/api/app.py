@@ -18,7 +18,7 @@ from api.routes.api import calculate_eco_score
 
 
 import pandas as pd
-from backend.scrapers.amazon.scrape_amazon_titles import (
+from scrapers.amazon.scrape_amazon_titles import (
     scrape_amazon_product_page,
     estimate_origin_country,
     resolve_brand_origin,
