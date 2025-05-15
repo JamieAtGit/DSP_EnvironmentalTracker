@@ -56,3 +56,12 @@ frontend/extension/dist/
 !ml_model/*.json
 !ml_model/*.pkl
 
+!backend/ml/ml_model/encoders/
+!backend/ml/ml_model/encoders/material_encoder.pkl
+
+!common/data/csv/
+!common/data/csv/defra_material_intensity.csv
+
+!brand_locations.json
+
+
