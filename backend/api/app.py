@@ -6,7 +6,7 @@ import os
 import os
 
 from uuid import uuid4
-from .scraper_worker import load_queue, save_queue
+from scraper_worker import load_queue, save_queue
 
 
 
