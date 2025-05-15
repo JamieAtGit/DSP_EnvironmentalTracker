@@ -62,6 +62,8 @@ frontend/extension/dist/
 !backend/ml/ml_model/encoders/
 !backend/ml/ml_model/encoders/*.pkl
 
+!common/
+!common/data/
 !common/data/csv/
 !common/data/csv/defra_material_intensity.csv
 
