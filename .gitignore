@@ -25,7 +25,7 @@ __pycache__/
 *.sqlite3
 .env
 .venv/
-*.joblib
+
 
 # === Node ===
 node_modules/
