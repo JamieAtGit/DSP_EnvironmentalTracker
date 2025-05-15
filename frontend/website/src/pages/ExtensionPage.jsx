@@ -12,7 +12,7 @@ export default function ExtensionPage() {
         </p>
 
         <a
-          href="https://example.com/extension-download.zip"
+          href="http://localhost:5000/static/my-extension.zip"
           download
           className="inline-block bg-green-600 text-white px-6 py-3 rounded shadow hover:bg-green-700 transition"
         >

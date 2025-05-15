@@ -157,15 +157,135 @@ export default function EstimateForm() {
 
       {productData && (
         <div className="result-card">
-          <h3>📦 {productTitle}</h3>
-          <p><strong>Eco Score (ML):</strong> {attributes.eco_score_ml}</p>
-          <p><strong>Rule-based Score:</strong> {attributes.eco_score_rule_based}</p>
-          <p><strong>Material:</strong> {canonicalMaterial}</p>
-          <p><strong>Weight:</strong> {attributes.weight_kg} kg</p>
-          <p><strong>Transport Mode:</strong> {attributes.transport_mode}</p>
-          <p><strong>CO₂ Emissions:</strong> {attributes.carbon_kg} kg</p>
-          <p><strong>Distance from Origin:</strong> {attributes.distance_from_origin_km} km</p>
-          <p><strong>Distance from UK Hub:</strong> {attributes.distance_from_uk_hub_km} km</p>
+          <div
+            className="text-center"
+            title={productTitle}
+            style={{
+              marginBottom: "8px",
+              fontWeight: "bold",
+              fontSize: "15px",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: "100%",
+              display: "block",
+            }}
+          >
+            <span role="img" aria-label="package" style={{ verticalAlign: "middle", marginRight: "4px" }}>
+              📦
+            </span>
+            {productTitle}
+          </div>
+
+          <div
+            style={{
+              fontSize: "14px",
+              background: "#fefefe",
+              border: "1px solid #ccc",
+              borderRadius: "8px",
+              padding: "1rem",
+            }}
+          >
+            <h3 style={{ marginTop: 0 }}>🔍 Raw & Parsed Values</h3>
+            <p>
+              <strong>Eco Score (ML):</strong> {attributes.eco_score_ml || "N/A"}
+            </p>
+            <p>
+              <strong>Eco Score (Rule-Based):</strong> {attributes.eco_score_rule_based || "N/A"}
+            </p>
+            <p>
+              <strong>Material Type:</strong>{" "}
+              <span title={materialInsight?.description || "No material insight available"}>
+                {canonicalMaterial.charAt(0).toUpperCase() + canonicalMaterial.slice(1)}
+                {guessedMaterial !== rawMaterial && " (guessed)"}
+              </span>
+            </p>
+            <p>
+              <strong>Transport Mode Used in Calculation:</strong>{" "}
+              {attributes.transport_mode ?? "N/A"}
+            </p>
+
+            <p>
+              <strong>Selected Transport Mode:</strong>{" "}
+              {attributes.selected_transport_mode
+                ? `${attributes.selected_transport_mode} ${
+                    attributes.selected_transport_mode === "Air"
+                      ? "✈️"
+                      : attributes.selected_transport_mode === "Ship"
+                      ? "🚢"
+                      : attributes.selected_transport_mode === "Truck"
+                      ? "🚚"
+                      : ""
+                  }`
+                : "Auto"}
+            </p>
+
+            <p>
+              <strong>Default Based on Distance:</strong>{" "}
+              {attributes.default_transport_mode
+                ? `${attributes.default_transport_mode} ${
+                    attributes.default_transport_mode === "Air"
+                      ? "✈️"
+                      : attributes.default_transport_mode === "Ship"
+                      ? "🚢"
+                      : attributes.default_transport_mode === "Truck"
+                      ? "🚚"
+                      : ""
+                  }`
+                : "N/A"}
+            </p>
+
+
+            {attributes.selected_transport_mode &&
+              attributes.selected_transport_mode !== attributes.default_transport_mode && (
+                <p style={{ color: "orange" }}>
+                  ⚠️ You overrode the suggested mode ({attributes.default_transport_mode}) with{" "}
+                  {attributes.selected_transport_mode}.
+                </p>
+            )}
+
+            <p>
+              <strong>Weight (incl. packaging):</strong> {attributes.weight_kg ?? "N/A"} kg
+            </p>
+            <p>
+              <strong>Carbon Emissions:</strong> {attributes.carbon_kg ?? "N/A"} kg CO₂
+            </p>
+
+            <div className="section-divider"></div>
+            <p>
+              <strong>Distance from Origin:</strong>{" "}
+              {Number.isFinite(parseFloat(attributes?.distance_from_origin_km))
+                ? `${parseFloat(attributes.distance_from_origin_km).toFixed(1)} km`
+                : "N/A"}
+            </p>
+
+            <p>
+              <strong>Distance from UK Hub:</strong>{" "}
+              {Number.isFinite(parseFloat(attributes?.distance_from_uk_hub_km))
+                ? `${parseFloat(attributes.distance_from_uk_hub_km).toFixed(1)} km`
+                : "N/A"}
+            </p>
+          </div>
+
+          <div className="text-center" style={{ marginTop: "10px" }}>
+            <button onClick={() => setEquivalenceView((prev) => (prev + 1) % 3)}>
+              <span role="img" aria-label="rotate" style={{ verticalAlign: "middle", marginRight: "4px" }}>
+                🔁
+              </span>
+              Show another comparison
+            </button>
+            <div style={{ marginTop: "8px", fontStyle: "italic" }}>
+              {equivalenceView === 0 && result.data?.attributes?.trees_to_offset && (
+                <span>≈ {result.data.attributes.trees_to_offset} trees to offset</span>
+              )}
+              {equivalenceView === 1 && result.data?.attributes?.carbon_kg && (
+                <span>≈ {(result.data.attributes.carbon_kg * 4.6).toFixed(1)} km driven</span>
+              )}
+              {equivalenceView === 2 && result.data?.attributes?.carbon_kg && (
+                <span>≈ {Math.round(result.data.attributes.carbon_kg / 0.011)} kettles boiled</span>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

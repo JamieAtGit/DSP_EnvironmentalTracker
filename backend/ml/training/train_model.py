@@ -43,14 +43,17 @@ for col in ["material", "transport", "recyclability", "origin", "true_eco_score"
     df[col] = df[col].astype(str).str.strip().str.title()
 
 # === Encode features ===
+
+expected_materials = ["Plastic", "Metal", "Wood", "Glass", "Paper", "Cardboard", "Leather", "Foam", "Aluminium", "Steel", "Other"]
 material_encoder = LabelEncoder()
+material_encoder.fit(expected_materials + df["material"].unique().tolist())
 transport_encoder = LabelEncoder()
 recycle_encoder = LabelEncoder()
 origin_encoder = LabelEncoder()
 label_encoder = LabelEncoder()
 
 # Feature encodings
-df["material_encoded"] = material_encoder.fit_transform(df["material"])
+df["material_encoded"] = material_encoder.transform(df["material"])
 df["transport_encoded"] = transport_encoder.fit_transform(df["transport"])
 df["recycle_encoded"] = recycle_encoder.fit_transform(df["recyclability"])
 df["origin_encoded"] = origin_encoder.fit_transform(df["origin"])
@@ -78,6 +81,8 @@ X = df[feature_cols]
 y = df["label_encoded"]
 
 # === Apply SMOTE ===
+print("📊 Original label distribution:")
+print(df["true_eco_score"].value_counts())
 sm = SMOTE(random_state=42)
 X_balanced, y_balanced = sm.fit_resample(X, y)
 
@@ -87,12 +92,18 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # === Train model ===
-model = RandomForestClassifier(
+from sklearn.calibration import CalibratedClassifierCV
+
+base_rf = RandomForestClassifier(
     n_estimators=100,
     class_weight="balanced",
     random_state=42
 )
-model.fit(X_train, y_train)
+model = CalibratedClassifierCV(base_rf, cv=3)
+model.fit(X_train, y_train)  # ✅ THIS LINE WAS MISSING
+
+sample_input = X_test.iloc[0:1]  # one row
+
 
 sample_input = X_test.iloc[0:1]  # one row
 print("🔬 Sample input:", sample_input.values)
@@ -121,9 +132,16 @@ joblib.dump(origin_encoder, os.path.join(encoders_dir, "origin_encoder.pkl"))
 joblib.dump(label_encoder, os.path.join(encoders_dir, "label_encoder.pkl"))
 joblib.dump(weight_bin_encoder, os.path.join(encoders_dir, "weight_bin_encoder.pkl"))
 print("✅ Model + encoders saved!")
+print("📦 Saved classes:")
+print("Materials:", material_encoder.classes_)
+print("Labels:", label_encoder.classes_)
+
 
 # === Feature Importance ===
-importances = model.feature_importances_
+rf = model.calibrated_classifiers_[0].estimator
+importances = rf.feature_importances_
+print("🧪 Underlying model type:", type(rf))
+
 feature_names = ["material", "transport", "recyclability", "origin", "weight_log", "weight_bin"]
 plt.figure(figsize=(6, 4))
 plt.barh(feature_names, importances)

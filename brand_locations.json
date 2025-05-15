@@ -103,5 +103,47 @@
       "city": "Shanghai"
     },
     "fulfillment": "UK"
+  },
+  "brand: silver valley": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "brand: sofaselectionuk ltd": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "brand: okydoky": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "vesgantti": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "shan zu": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "hexclad": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
   }
 }

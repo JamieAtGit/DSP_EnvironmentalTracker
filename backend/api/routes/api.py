@@ -83,18 +83,27 @@ def estimate():
     raw_weight = product['estimated_weight_kg']
     final_weight = raw_weight * 1.05 if include_packaging else raw_weight
 
-    # Transport mode decision
-    transport_mode, emission_factor = determine_transport_mode(distance)
     modes = {
-        "Air": 0.5,
-        "Ship": 0.03,
-        "Truck": 0.15
+    "Air": 0.5,
+    "Ship": 0.03,
+    "Truck": 0.15
     }
+    
+    # ✅ Get the default mode based on distance
+    default_mode, default_emission_factor = determine_transport_mode(distance)
 
+    
+    # Use user override if valid
     if override_mode in modes:
         transport_mode = override_mode
         emission_factor = modes[override_mode]
+        print(f"🚚 Override transport mode used: {transport_mode}")
+    else:
+        transport_mode = default_mode
+        emission_factor = default_emission_factor
+        print(f"📦 Auto-detected transport mode used: {transport_mode}")
 
+    # ✅ Unconditionally calculate emissions after deciding on mode
     carbon_kg = round(final_weight * emission_factor * (distance / 1000), 2)
 
     # Eco Score
@@ -105,18 +114,27 @@ def estimate():
         final_weight
     )
 
-    # Enhancement: fallback source flag + confidence
+
+    # Metadata
     origin_source = product.get("origin_source", "brand_db")
     confidence = product.get("confidence", "Estimated")
 
-    # Format distances as strings with units for display
-    distance_from_origin_formatted = f"{origin_distance} km"
-    distance_from_uk_hub_formatted = f"{uk_distance} km"
-    
-    # Log formatted distances for debugging
-    print(f"🎯 Formatted distances: {distance_from_origin_formatted}, {distance_from_uk_hub_formatted}")
 
-    # Build response with BOTH field name formats for maximum compatibility
+    print("✅ Final values:", {
+    "transport_mode": transport_mode,
+    "default": default_mode,
+    "override": override_mode,
+    "emission_factor": emission_factor
+})
+
+    eco_score_rule = calculate_eco_score(
+        carbon_kg,
+        product.get("recyclability"),
+        origin_distance,
+        final_weight
+    )
+
+    # Response
     response = {
         "title": product.get("title"),
         "data": {
@@ -125,18 +143,24 @@ def estimate():
                 "weight_kg": round(final_weight, 2),
                 "raw_product_weight_kg": round(raw_weight, 2),
                 "origin": product['brand_estimated_origin'],
-                
-                # Include BOTH property naming styles to ensure compatibility
+
                 "intl_distance_km": origin_distance,
                 "uk_distance_km": uk_distance,
-                "distance_from_origin_km": origin_distance,  # This matches what your frontend expects
-                "distance_from_uk_hub_km": uk_distance,      # This matches what your frontend expects
-                
+                "distance_from_origin_km": origin_distance,
+                "distance_from_uk_hub_km": uk_distance,
+
                 "dimensions_cm": product.get("dimensions_cm"),
                 "material_type": product.get("material_type"),
+
+                # ✅ NEW FIELDS
                 "transport_mode": transport_mode,
+                "default_transport_mode": default_mode,
+                "selected_transport_mode": override_mode or None,
+
                 "emission_factors": modes,
-                "eco_score_ml": eco_score,
+                "eco_score_ml": "N/A",
+                "eco_score_rule_based": eco_score_rule,  # <== rule-based method
+
                 "recyclability": product.get("recyclability"),
                 "confidence": confidence,
                 "origin_source": origin_source,
@@ -144,7 +168,6 @@ def estimate():
             }
         }
     }
-
     return jsonify(response)
 
 
