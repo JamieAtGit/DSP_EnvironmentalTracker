@@ -56,8 +56,11 @@ frontend/extension/dist/
 !ml_model/*.json
 !ml_model/*.pkl
 
+# Ensure encoders and all .pkl files are kept
+!backend/ml/
+!backend/ml/ml_model/
 !backend/ml/ml_model/encoders/
-!backend/ml/ml_model/encoders/material_encoder.pkl
+!backend/ml/ml_model/encoders/*.pkl
 
 !common/data/csv/
 !common/data/csv/defra_material_intensity.csv
