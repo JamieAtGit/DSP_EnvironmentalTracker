@@ -5,11 +5,6 @@ import sys
 import os
 import os
 
-from uuid import uuid4
-from scraper_worker import load_queue, save_queue
-
-
-
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 model_dir = os.path.join(BASE_DIR, "backend", "ml", "models")
@@ -394,6 +389,7 @@ def fuzzy_match_origin(origin):
             return clean
     return origin
 
+
 @app.route("/api/eco-data", methods=["GET"])
 def fetch_eco_dataset():
     try:
@@ -432,6 +428,7 @@ def insights_dashboard():
         print(f"❌ Failed to serve insights: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/api/feedback", methods=["POST"])
 def save_feedback():
     try:
@@ -457,10 +454,41 @@ def save_feedback():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/estimate_emissions", methods=["POST"])
+
+
+def calculate_eco_score_local_only(carbon_kg, recyclability, weight_kg):
+    carbon_score = max(0, 10 - carbon_kg * 5)
+    weight_score = max(0, 10 - weight_kg * 2)
+    recycle_score = {
+        "Low": 2,
+        "Medium": 6,
+        "High": 10
+    }.get(recyclability or "Medium", 5)
+
+    total_score = (carbon_score + weight_score + recycle_score) / 3
+
+    return map_score_to_grade(total_score)
+
+def map_score_to_grade(score):
+    if score >= 9:
+        return "A+"
+    elif score >= 8:
+        return "A"
+    elif score >= 6.5:
+        return "B"
+    elif score >= 5:
+        return "C"
+    elif score >= 3.5:
+        return "D"
+    else:
+        return "F"
+
+
 @app.route("/estimate_emissions", methods=["POST"])
 def estimate_emissions():
     print("🔔 Route hit: /estimate_emissions")
+    if request.method == "OPTIONS":
+        return '', 201
 
     data = request.get_json()
     if not data:
@@ -479,6 +507,17 @@ def estimate_emissions():
         # Scrape product
         from backend.scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_page, haversine, origin_hubs, uk_hub
         product = scrape_amazon_product_page(url)
+        
+        from backend.scrapers.amazon.guess_material import smart_guess_material
+
+        material = product.get("material_type")
+        if not material or material.lower() in ["unknown", "other", ""]:
+            guessed = smart_guess_material(product.get("title", ""))
+            if guessed:
+                print(f"🧠 Fallback guessed material: {guessed}")
+                material = guessed.title()
+        product["material_type"] = material
+
         if not product:
             return jsonify({"error": "Could not fetch product"}), 500
 
@@ -541,6 +580,13 @@ def estimate_emissions():
             origin_distance_km,
             weight
         )
+        
+        eco_score_rule_local = calculate_eco_score_local_only(
+            carbon_kg,
+            product.get("recyclability", "Medium"),
+            weight
+        )
+        
 
 
         # === ML Prediction for Eco Score
@@ -591,26 +637,46 @@ def estimate_emissions():
 
         # Assemble response
         return jsonify({
+            "title": product.get("title"),
             "data": {
                 "attributes": {
-                    "origin": origin_country,
+                    "carbon_kg": carbon_kg,
                     "weight_kg": round(weight, 2),
                     "raw_product_weight_kg": round(raw_weight, 2),
+                    "origin": origin_country,
+                    "origin_source": product.get("origin_source", "brand_db"),
+
+                    # Distance fields
+                    "intl_distance_km": origin_distance_km,
+                    "uk_distance_km": uk_distance_km,
+                    "distance_from_origin_km": origin_distance_km,
+                    "distance_from_uk_hub_km": uk_distance_km,
+
+                    # Product features
+                    "dimensions_cm": product.get("dimensions_cm"),
+                    "material_type": product.get("material_type"),
+                    
+                    "recyclability": product.get("recyclability"),
+
+                    # Transport details
                     "transport_mode": transport_mode,
                     "default_transport_mode": default_mode,
                     "selected_transport_mode": override_mode or None,
-                    "carbon_kg": carbon_kg,
+                    "emission_factors": modes,
+
+                    # Scoring
                     "eco_score_ml": eco_score_ml,
                     "eco_score_confidence": confidence,
                     "eco_score_rule_based": eco_score_rule,
-           
+                    "eco_score_rule_based_local_only": eco_score_rule_local,
 
-                    "distance_from_origin_km": origin_distance_km,
-                    "distance_from_uk_hub_km": uk_distance_km,
-                },
-                "title": product.get("title")
+
+                    # Misc
+                    "trees_to_offset": round(carbon_kg / 20, 1)
+                }
             }
         })
+
 
     except Exception as e:
         print(f"❌ Uncaught error in estimate_emissions: {e}")

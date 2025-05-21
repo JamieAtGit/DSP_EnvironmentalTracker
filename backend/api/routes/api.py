@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from backend.scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_page, haversine, origin_hubs, uk_hub
 import pgeocode
+from backend.scrapers.amazon.guess_material import smart_guess_material
+
 
 app = Flask(__name__)
 CORS(app)
@@ -14,6 +16,7 @@ def determine_transport_mode(distance_km):
         return "Ship", 0.02   # 20g per tonne-km
     else:
         return "Air", 0.5     # 500g per tonne-km
+   
     
 def calculate_eco_score(carbon_kg, recyclability, distance_km, weight_kg):
     carbon_score = max(0, 10 - carbon_kg * 5)
@@ -39,6 +42,35 @@ def calculate_eco_score(carbon_kg, recyclability, distance_km, weight_kg):
         return "D"
     else:
         return "F"
+    
+  
+def calculate_eco_score_local_only(carbon_kg, recyclability, weight_kg):
+    carbon_score = max(0, 10 - carbon_kg * 5)
+    weight_score = max(0, 10 - weight_kg * 2)
+    recycle_score = {
+        "Low": 2,
+        "Medium": 6,
+        "High": 10
+    }.get(recyclability or "Medium", 5)
+
+    total_score = (carbon_score + weight_score + recycle_score) / 3
+
+    return map_score_to_grade(total_score)
+
+def map_score_to_grade(score):
+    if score >= 9:
+        return "A+"
+    elif score >= 8:
+        return "A"
+    elif score >= 6.5:
+        return "B"
+    elif score >= 5:
+        return "C"
+    elif score >= 3.5:
+        return "D"
+    else:
+        return "F"
+  
 
 @app.route("/estimate_emissions", methods=["POST"])
 def estimate():
@@ -65,6 +97,15 @@ def estimate():
 
     # Scrape product
     product = scrape_amazon_product_page(url)
+    # Fallback guess for material type
+    material = product.get("material_type")
+    if not material or material.lower() in ["unknown", "other", ""]:
+        guessed = smart_guess_material(product.get("title", ""))
+        if guessed:
+            print(f"🧠 Fallback guessed material: {guessed}")
+            material = guessed.title()
+    product["material_type"] = material
+
     if not product:
         return jsonify({'error': 'Could not fetch product'}), 500
 
@@ -113,6 +154,13 @@ def estimate():
         origin_distance,
         final_weight
     )
+    
+    eco_score_rule_local = calculate_eco_score_local_only(
+        carbon_kg,
+        product.get("recyclability", "Medium"),
+        final_weight
+    )
+
 
 
     # Metadata
@@ -133,8 +181,10 @@ def estimate():
         origin_distance,
         final_weight
     )
+    
 
     # Response
+    # === Final Response ===
     response = {
         "title": product.get("title"),
         "data": {
@@ -142,33 +192,42 @@ def estimate():
                 "carbon_kg": carbon_kg,
                 "weight_kg": round(final_weight, 2),
                 "raw_product_weight_kg": round(raw_weight, 2),
-                "origin": product['brand_estimated_origin'],
+                "origin": product.get("brand_estimated_origin"),
 
+                # Distance fields
                 "intl_distance_km": origin_distance,
                 "uk_distance_km": uk_distance,
                 "distance_from_origin_km": origin_distance,
                 "distance_from_uk_hub_km": uk_distance,
 
+                # Product features
                 "dimensions_cm": product.get("dimensions_cm"),
                 "material_type": product.get("material_type"),
+                "recyclability": product.get("recyclability"),
 
-                # ✅ NEW FIELDS
+                # Transport details
                 "transport_mode": transport_mode,
                 "default_transport_mode": default_mode,
                 "selected_transport_mode": override_mode or None,
 
+                # Emission & scoring
                 "emission_factors": modes,
-                "eco_score_ml": "N/A",
-                "eco_score_rule_based": eco_score_rule,  # <== rule-based method
+                # Scoring
+                "eco_score_ml": eco_score,
+                "eco_score_confidence": confidence,
+                "eco_score_rule_based": eco_score_rule,
+                "eco_score_rule_based_local_only": eco_score_rule_local,
 
-                "recyclability": product.get("recyclability"),
+                # Metadata
                 "confidence": confidence,
                 "origin_source": origin_source,
                 "trees_to_offset": round(carbon_kg / 20, 1),
             }
         }
     }
+
     return jsonify(response)
+
 
 
 if __name__ == '__main__':

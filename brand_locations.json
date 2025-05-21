@@ -145,5 +145,89 @@
       "city": "Shanghai"
     },
     "fulfillment": "UK"
+  },
+  "brand: zwilling": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "home detail": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "amazon basics": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "devoko": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "made in": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "guasslee": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "precision synergie": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "high5": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "tepe": {
+    "origin": {
+      "country": "Sweden",
+      "city": "Unknown"
+    },
+    "fulfillment": "UK"
+  },
+  "kinetica": {
+    "origin": {
+      "country": "Ireland",
+      "city": "Unknown"
+    },
+    "fulfillment": "UK"
+  },
+  "mattel games": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "amfit nutrition": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
   }
 }

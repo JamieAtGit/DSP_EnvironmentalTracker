@@ -1,4 +1,4 @@
-# As a temporary workaround, try this at the top of the file
+#BOOTSTRAP
 import sys
 print(sys.executable)
 import csv
@@ -8,8 +8,19 @@ import random
 import re
 import time
 from datetime import datetime
+import difflib
 
+# Debug: print interpreter path
+print("🧠 Python running from:", sys.executable)
 
+# Step 1: Point to your project root (DEV/DSP)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Step 2: Now you can import from common
+from common.data.brand_origin_resolver import get_brand_origin
+from backend.utils.co2_data import load_material_co2_data
 
 import traceback
 import requests
@@ -18,29 +29,54 @@ from fake_useragent import UserAgent
 
 
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.chrome.webdriver import WebDriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+
 from backend.utils.co2_data import load_material_co2_data
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.webdriver import WebDriver
+from webdriver_manager.chrome import ChromeDriverManager
 
-material_co2_map = load_material_co2_data()
 
-fallback_mode = False
+CHROMEDRIVER_PATH = r"C:\Dev\DSP\tools\selenium\chromedriver\chromedriver.exe"
 
 chrome_options = Options()
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+chrome_options.add_argument("window-size=1280,800")
 
-service = Service(ChromeDriverManager().install())
+#driver_path = ChromeDriverManager(version="136.0.7103.114").install()
+#print("🚀 Using ChromeDriver from:", driver_path)
+
+
+material_co2_map = load_material_co2_data()
+
+fallback_mode = False
+
+ua = UserAgent()
+random_user_agent = ua.random
+chrome_options.add_argument(f"user-agent={random_user_agent}")
+print(f"🧢 Using User-Agent: {random_user_agent}")
+
+# === ChromeDriver instantiation should happen *inside* your scraping functions
+# For test or fallback mode only:
+fallback_mode = False
+print("⚠️ Fallback mode:", fallback_mode)
+
+# === CO2 Lookup Table
+material_co2_map = load_material_co2_data()
+
+#service = Service(ChromeDriverManager().install())
+#driver = webdriver.Chrome(service=Service(CHROMEDRIVER_PATH), options=chrome_options)
+
 #driver = webdriver.Chrome(service=service, options=chrome_options)
 print("⚠️ Running fallback mode — scraper disabled on remote deployment.")
-fallback_mode = True
+fallback_mode = False
 
 # Quick test
 #driver.get("https://www.google.com")
@@ -62,23 +98,22 @@ class Log:
 def safe_get(driver, url, retries=3, wait=10):
     for i in range(retries):
         try:
-            if not safe_get(driver, url):
-                Log.error(f"🛑 Giving up on URL: {url}")
-                return []  # Or return None / skip product depending on context
+            driver.get(url)
+            time.sleep(wait)
 
-
-            # Check for common Amazon anti-bot pages
+            # Check for anti-bot blocks
             page_source = driver.page_source.lower()
-            if "service unavailable" in page_source or "robot check" in page_source or "we're sorry" in page_source:
+            if any(block in page_source for block in ["robot check", "service unavailable", "we're sorry"]):
                 Log.warn(f"🚫 Blocked or 503 at {url}. Retrying ({i+1}/{retries})...")
-                time.sleep(wait * (i+1))
-                continue
+                continue  # Try again
 
-            return True  # success
+            return True
         except Exception as e:
             Log.warn(f"❌ Failed to load {url} (attempt {i+1}): {e}")
             time.sleep(wait * (i+1))
     return False
+
+
 
 
 # === PRIORITY PRODUCTS DB ===
@@ -172,6 +207,8 @@ known_brand_origins = {
     "panasonic": "Japan",
     "microsoft": "USA",
     "nintendo": "Japan",
+    "uno": {"country": "USA", "source": "brand_db"},
+    "mattel": {"country": "USA", "source": "brand_db"},
 
 }
 
@@ -331,9 +368,6 @@ def extract_material(text):
 
 
 
-
-
-
 def haversine(lat1, lon1, lat2, lon2):
     from math import radians, cos, sin, sqrt, atan2
     R = 6371
@@ -343,13 +377,6 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c
 
-def is_invalid_brand(candidate):
-    candidate = candidate.lower()
-    return (
-        candidate in ["usb", "type", "plug", "cable", "portable", "wireless", "eco", "fast", "unknown"]
-        or re.match(r"^\d+[a-z]{0,3}$", candidate)  # e.g., 65w, 100w
-        or candidate.isdigit()
-    )
 
 
 def resolve_brand_origin(brand_key, title_fallback=None):
@@ -584,53 +611,45 @@ def extract_recyclability(text_blobs):
         return "Low"
     return "Unknown"
 
+def is_invalid_brand(candidate):
+    candidate = candidate.lower()
+    return (
+        candidate in ["usb", "type", "plug", "cable", "portable", "wireless", "eco", "fast", "unknown", "for"]
+        or re.match(r"^\d+[a-z]{0,3}$", candidate)
+        or candidate.isdigit()
+    )
 
-
-# === SCRAPER for search result pages ===
-def scrape_amazon_titles(url, max_items=100):
-
+def scrape_amazon_titles(url, max_items=100, enrich=False):
     import undetected_chromedriver as uc
-    options = uc.ChromeOptions()
-    driver = uc.Chrome(options=options)
-    global brand_locations # potential bug fix
-    driver = webdriver.Chrome(service=Service("C:/Users/jamie/OneDrive/Documents/University/ComputerScience/Year3/DigitalSP/DSProject/Tools/chromedriver-win64/chromedriver.exe"), options=chrome_options)
+    from common.data.brand_origin_resolver import get_brand_origin
 
-
-
-
-
-    # Optional: reuse your chrome_options if needed
     options = uc.ChromeOptions()
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--headless")
 
-    # Optional: run without headless so you can see it (or set headless if you want stealth mode)
-    # options.headless = True
-
+    driver = webdriver.Chrome(service=Service(CHROMEDRIVER_PATH), options=chrome_options)
 
     if not safe_get(driver, url):
         Log.error(f"🛑 Giving up on URL: {url}")
-        return []  # Or return None / skip product depending on context
-
+        return []
 
     try:
-        print("📍 Waiting for product title...")
-
         WebDriverWait(driver, 20).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.s-main-slot div[data-asin]"))
         )
     except:
-        print("❌ Could not find product containers.")
+        Log.error("❌ Could not find product containers.")
         driver.quit()
         return []
 
     time.sleep(2)
-
     product_elements = driver.find_elements(By.CSS_SELECTOR, "div.s-main-slot div[data-asin]")
     print(f"🔍 Found {len(product_elements)} items")
 
     products = []
+
     for product in product_elements:
         if len(products) >= max_items:
             break
@@ -640,17 +659,33 @@ def scrape_amazon_titles(url, max_items=100):
             if not asin:
                 continue
 
-            link_el = product.find_element(By.CSS_SELECTOR, "a.a-link-normal.s-no-outline")
+            # === Robust link selector fallback ===
+            link_el = None
+            for sel in [
+                "a.a-link-normal.s-no-outline",
+                "h2 a.a-link-normal",
+                "a.a-link-normal"
+            ]:
+                try:
+                    link_el = product.find_element(By.CSS_SELECTOR, sel)
+                    if link_el:
+                        break
+                except:
+                    continue
+
+            if not link_el:
+                Log.warn("⚠️ Skipping: No valid product link found.")
+                continue
+
             href = link_el.get_attribute("href")
 
+            # === Extract title ===
             title = None
-            title_selectors = [
+            for selector in [
                 "span.a-size-medium.a-color-base.a-text-normal",
                 "span.a-size-base-plus.a-color-base.a-text-normal",
                 "h2 span"
-            ]
-            
-            for selector in title_selectors:
+            ]:
                 try:
                     title_el = product.find_element(By.CSS_SELECTOR, selector)
                     title = title_el.text.strip()
@@ -660,128 +695,46 @@ def scrape_amazon_titles(url, max_items=100):
                     continue
 
             if not title:
-                print("❌ Skipping: Could not find product title")
                 continue
-            
 
-
-            
-            # === BRAND DETECTION ===
-            brand = None
-
-            # 1. Try data-brand
-            brand_attr = product.get_attribute("data-brand")
-            if brand_attr and len(brand_attr.strip()) > 1:
-                brand = brand_attr.strip()
-
-            # 2. Try known selectors
+            # === Detect brand ===
+            brand = product.get_attribute("data-brand") or None
             if not brand:
                 try:
                     el = product.find_element(By.CSS_SELECTOR, "h5.s-line-clamp-1 span.a-size-base")
                     brand = el.text.strip()
                 except:
                     pass
-            #2.5. trying aria-label attributes
-            aria_label = product.get_attribute("aria-label")
-            if aria_label:
-                for known_brand in list(known_brand_origins.keys()) + list(brand_origin_lookup.keys()):
-                    if known_brand in aria_label.lower():
-                        brand = known_brand.capitalize()
-                        Log.info(f"🔍 Inferred brand from aria-label: {brand}")
-                        break
 
-            # 3. Try scanning title for known brands
             if not brand:
-                for known_brand in list(known_brand_origins.keys()) + list(brand_origin_lookup.keys()):
-                    if known_brand in title.lower():
-                        brand = known_brand.capitalize()
-                        break
-                    
-            #3.5. Full product block text scrape (last proper resort)      
-            if not brand:
-                full_text = product.text.lower()
-                for known_brand in list(known_brand_origins.keys()) + list(brand_origin_lookup.keys()):
-                    if known_brand in full_text:
-                        brand = known_brand.capitalize()
-                        Log.info(f"🧾 Matched brand from full block text: {brand}")
-                        break
+                first_word = title.split()[0].lower()
+                brand = first_word.capitalize() if not is_invalid_brand(first_word) else "Unknown"
 
-
-            # 4. Fallback to first word
-            if not brand:
-                fallback = title.split()[0].lower()
-                if fallback in ["usb", "wireless", "portable", "led", "plug", "type", "eco", "bottle"] or re.match(r"^\d+[a-z]{0,2}$", fallback):
-                    brand = "Unknown"
-                else:
-                    brand = fallback.capitalize()
-
-            # Final guard
-            if brand.lower() == "unknown":
-                Log.warn(f"⚠️ Captured unknown brand from title: {title}")
-                # Ensure the file exists
-                if not os.path.exists("unrecognized_brands.txt"):
-                    with open("unrecognized_brands.txt", "w", encoding="utf-8") as f:
-                        f.write("")  # create an empty file
-
-                with open("unrecognized_brands.txt", "a", encoding="utf-8") as log:
-                    log.write(f"{brand_key}\n")
-
-
-
-
-            print("🛒", title)
-            
             brand_key = brand.lower().strip()
-            # Try to enrich brand location if unknown
-            if brand_key not in brand_locations:
-                enrich_brand_location(brand_key, href)  # call live scraper
-                # Reload JSON after enrichment
-                try:
-                    with open("brand_locations.json", "r", encoding="utf-8") as f:
-                        brand_locations = json.load(f)
-                    Log.success(f"📦 Updated brand_locations.json after enriching {brand_key}")
-                except Exception as e:
-                    Log.warn(f"⚠️ Failed to reload brand_locations after enriching {brand_key}: {e}")
+            if is_invalid_brand(brand_key):
+                Log.warn(f"🚫 Skipping invalid brand: {brand_key}")
+                continue
 
-            # Use resolved location
-            origin_country, origin_city = resolve_brand_origin(brand_key)
+            # === Get or enrich brand origin ===
+            origin_info = get_brand_origin(brand_key)
+            origin_country = origin_info["country"]
+            origin_city = origin_info["city"]
 
-                  
+            if origin_country == "Unknown" and enrich:
+                enrich_brand_location(brand_key, href)
+                origin_info = get_brand_origin(brand_key)
+                origin_country = origin_info["country"]
+                origin_city = origin_info["city"]
+
+            # === Estimate rest of metadata ===
+            fulfillment_country = infer_fulfillment_country(href)
             origin = origin_hubs.get(origin_country, origin_hubs["UK"])
-            fulfillment_country = infer_fulfillment_country(href)  # or use `url` in the product page
             fulfillment_hub = amazon_fulfillment_centers.get(fulfillment_country, amazon_fulfillment_centers["UK"])
             distance = round(haversine(origin["lat"], origin["lon"], fulfillment_hub["lat"], fulfillment_hub["lon"]), 1)
 
-
-            weight = None
-            try:
-                # Try scraping tech specs first
-                tech_details = driver.find_elements(By.CSS_SELECTOR, "#prodDetails td")
-                for i in range(len(tech_details) - 1):
-                    label = tech_details[i].text.lower()
-                    value = tech_details[i + 1].text.lower()
-                    if "weight" in label:
-                        weight = extract_weight(value)
-                        print(f"⚖️ Extracted from tech spec: {weight} kg")
-                        break
-
-                # Only fallback after the loop
-                if not weight:
-                    extracted_weight = extract_weight(title)
-                    if extracted_weight:
-                        weight = extracted_weight
-                        print(f"⚠️ Fallback used — extracted from title: {weight} kg")
-
-                       
-            except:
-                pass
-
-            if not origin_country or origin_country.lower() in ["unknown", "other", ""]:
-                origin_country, origin_city = resolve_brand_origin(brand_key, title)
-
-            if not weight:
-                weight = extract_weight(title)
-                        
+            full_text = product.text.lower()
+            weight = extract_weight(full_text) or extract_weight(title)
+            material = extract_material(full_text)
 
             products.append({
                 "asin": asin,
@@ -792,32 +745,16 @@ def scrape_amazon_titles(url, max_items=100):
                 "distance_uk_to_user": 100,
                 "estimated_weight_kg": weight,
                 "co2_emissions": None,
+                "material_type": material,
                 "recyclability": random.choice(["Low", "Medium", "High"])
             })
 
         except Exception as e:
-            print("⚠️ Skipping product due to error:", e)
-
-        # Save to cleaned_products.json
-        try:
-            cleaned_path = "cleaned_products.json"
-            if os.path.exists(cleaned_path):
-                with open(cleaned_path, "r", encoding="utf-8") as f:
-                    cleaned = json.load(f)
-            else:
-                cleaned = []
-
-            cleaned.append(product)
-            with open(cleaned_path, "w", encoding="utf-8") as f:
-                json.dump(cleaned, f, indent=2)
-            Log.success("🧽 Product added to cleaned_products.json")
-            
-            
-        except Exception as e:
-            Log.warn(f"⚠️ Could not write to cleaned_products.json: {e}")
+            Log.warn(f"⚠️ Skipping product due to error: {e}")
 
     driver.quit()
     return products
+
 
 
 import os
@@ -1008,6 +945,21 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
                             break
                 except Exception as e:
                     Log.warn(f"⚠️ Error checking tech spec for origin: {e}")
+                    
+            # 1.5.2 Extended blob fallback: broader keyword match
+            if origin_country in ["Unknown", "Other", None, ""]:
+                for blob in text_blobs:
+                    if any(kw in blob for kw in ["country of origin", "made in", "product of", "manufactured in", "origin:"]):
+                        match = re.search(r"(?:made in|product of|manufactured in|origin[:\s]*)([a-zA-Z\s]+)", blob)
+                        if match:
+                            raw_origin = match.group(1).strip()
+                            if raw_origin and raw_origin.lower() not in ["unknown", "not specified"]:
+                                origin_country = fuzzy_normalize_origin(raw_origin)
+                                origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
+                                origin_source = "blob_fallback"
+                                print(f"🌍 Fuzzy extracted origin from blob: {raw_origin} → {origin_country}")
+                                break
+
 
             # 2. Fallback: brand DB, but only if page didn’t already give a specific origin
             if origin_country in ["Unknown", "Other", None, ""]:
@@ -1081,6 +1033,18 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
 
             
             origin_already_saved = False  # ✅ Add this before the loop
+            
+            bullets = driver.find_elements(By.CSS_SELECTOR, "#detailBullets_feature_div li")
+            kv_rows = driver.find_elements(By.CSS_SELECTOR, "table.a-keyvalue tr")
+            desc = driver.find_elements(By.ID, "productDescription")
+
+            text_blobs += [b.text.strip().lower() for b in bullets]
+            text_blobs += [r.text.strip().lower() for r in kv_rows]
+            text_blobs += [d.text.strip().lower() for d in desc]
+
+            material = None
+            material_source = "Unknown"
+
 
             for blob in text_blobs:
                 legacy_specs = []
@@ -1102,11 +1066,107 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
                         dimensions = extracted_dimensions
                         print(f"📦 Extracted dimensions: {dimensions} cm")
 
-                if not material:
-                    extracted_material = extract_material(blob)
-                    if extracted_material:
-                        material = extracted_material
-                        print(f"🧬 Extracted material: {material}")
+
+              
+
+                # === MATERIAL INFERENCE LOGIC ===
+                def infer_material(title, text_blobs, asin=None):
+                    material = None
+                    material_source = "Unknown"
+
+                    # Flatten and lowercase all text blobs
+                    all_text = " ".join(text_blobs).lower()
+                    title = title.lower()
+
+                    # 1. Direct keyword match (text blobs)
+                    keyword_map = {
+                        "Plastic": ["plastic", "polypropylene", "pp", "polyethylene", "pet"],
+                        "Glass": ["glass", "borosilicate"],
+                        "Aluminium": ["aluminium", "aluminum"],
+                        "Steel": ["steel", "stainless steel", "inox"],
+                        "Paper": ["paper", "paperboard"],
+                        "Cardboard": ["cardboard", "carton"],
+                        "Fabric": ["fabric", "cloth", "textile", "canvas"],
+                        "Cotton": ["cotton"],
+                        "Bamboo": ["bamboo"],
+                        "Wood": ["wood", "wooden"],
+                        "Rubber": ["rubber"],
+                        "Silicone": ["silicone"]
+                    }
+
+                    for mat, terms in keyword_map.items():
+                        if any(kw in all_text for kw in terms):
+                            material = mat
+                            material_source = "text_blob_match"
+                            break
+
+                    # 2. Fuzzy fallback using title
+                    if not material or material.lower() == "unknown":
+                        for mat, terms in keyword_map.items():
+                            if any(kw in title for kw in terms):
+                                material = mat
+                                material_source = "title_fuzzy"
+                                break
+
+                    # 3. Category heuristics
+                    category_keywords = {
+                        "Paper": ["card", "board game", "book", "journal", "notebook", "diary", "pad"],
+                        "Plastic": ["tablet", "tub", "bottle", "container", "cap", "case", "lid", "pouch", "tube"],
+                        "Glass": ["jar", "flask", "mason"],
+                        "Fabric": ["bag", "tote", "backpack"],
+                        "Steel": ["thermos", "cutlery", "knife", "fork", "bottle opener"],
+                    }
+                    if not material or material.lower() == "unknown":
+                        for mat, keywords in category_keywords.items():
+                            if any(word in title for word in keywords):
+                                material = mat
+                                material_source = "category_guess"
+                                break
+
+                    # 4. Similar ASIN lookup (if priority DB available)
+                    if not material and asin and asin in priority_products:
+                        trusted_product = priority_products[asin]
+                        mat = trusted_product.get("material_type")
+                        if mat and mat.lower() not in ["unknown", ""]:
+                            material = mat
+                            material_source = "trusted_db"
+
+                    # 5. Final fallback
+                    if not material:
+                        material = "Unknown"
+                        material_source = "default"
+
+                    return material, material_source
+
+                # Inject this into your scrape_amazon_product_page logic around material inference:
+                # Replace your entire material detection block with:
+                material, material_source = infer_material(title, text_blobs, asin)
+                print(f"🧬 Final inferred material: {material} (source: {material_source})")
+
+                    
+
+                # === RECYCLABILITY ESTIMATION ===
+                material_recyclability_map = {
+                    "plastic": "Medium",
+                    "glass": "High",
+                    "aluminium": "High",
+                    "steel": "High",
+                    "paper": "Medium",
+                    "cardboard": "Medium",
+                    "fabric": "Low",
+                    "cotton": "Low",
+                    "bamboo": "Low",
+                    "wood": "Low"
+                }
+
+                if not recyclability or recyclability == "Unknown":
+                    if material and material.lower() in material_recyclability_map:
+                        recyclability = material_recyclability_map[material.lower()]
+                        print(f"♻️ Estimated recyclability from material: {material} → {recyclability}")
+                    else:
+                        recyclability = "Unknown"
+
+
 
                 # ✅ Save brand origin only ONCE
                 if not origin_already_saved:
@@ -1204,6 +1264,8 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
         if material and weight:
             co2_emissions = round(material_co2_map.get(material.lower(), 2.0) * weight, 2)
             
+        
+            
 
         product = {
             "asin": asin,
@@ -1283,18 +1345,31 @@ if __name__ == "__main__":
     search_terms = [
         "usb+c+charger", "eco+friendly+bottle", "coffee+mug", "mechanical+keyboard", 	
         "shampoo", "wireless+earbuds", "reusable+bag", "portable+fan", "toothbrush", 	
-        "led+lamp", "bamboo cutlery", "compostable bag", "metal straw", "plastic container",
-        "fabric tote", "glass bottle", "stainless steel mug", "wooden spoon",
-        "eco friendly notebooks", "recycled stationery", "canvas shopping bag",
-        "solar power bank", "eco friendly phone case" ,"stainless steel lunchbox",
-        "reusable baking mat", "recycled paper towels", "compost bin kitchen", 
-        "refillable deodorant", "eco friendly shampoo", "solid shampoo bar", "bamboo razor",
-        "sustainable soap", "bamboo toothbrush", "reusable straws", "organic cotton bag"
+        "led+lamp", "bamboo+cutlery", "compostable+bag", "metal+straw", "plastic+container",
+        "fabric+tote", "glass+bottle", "stainless+steel+mug", "wooden+spoon",
+        "eco+friendly+notebooks", "recycled+stationery", "canvas+shopping+bag",
+        "solar+power+bank", "eco+friendly+phone+case" ,"stainless+steel+lunchbox",
+        "reusable+baking+mat", "recycled+paper+towels", "compost+bin+kitchen", 
+        "refillable+deodorant", "eco+friendly+shampoo", "solid+shampoo+bar", "bamboo+razor",
+        "sustainable+soap", "bamboo+toothbrush", "reusable+straws", "organic+cotton+bag", 
+        "biodegradable+cutlery", "eco+cleaning+products", "zero+waste+kit", "reusable+water+bottle",
+        "natural+deodorant", "eco+friendly+detergent", "sustainable+kitchen+items", "organic+cotton+towel",
+        "eco+friendly+makeup+remover", "reusable+produce+bags", "biodegradable+trash+bags",
+        "eco+friendly+gift+wrap", "bamboo+hairbrush", "eco+friendly+dish+soap", "plastic+free+toothpaste",
+        "stainless+steel+straws", "eco+friendly+cutting+board", "sustainable+lunch+box",
+        "organic+cotton+napkins", "compostable+coffee+pods", "plastic+bottle", "metal+chair", 
+        "folding+chair", "water+bottle", "kitchen+knife",
+        "cutting+board", "plastic+storage+box", "razor", "electric+shaver", "manual+toothbrush",
+        "electric+toothbrush", "bath+towel", "dish+soap", "hand+soap", "laundry+detergent",
+        "shower+gel", "body+wash", "reusable+coffee+cup", "travel+mug", "ceramic+mug",
+        "kitchen+tongs", "nonstick+pan", "cast+iron+skillet", "kitchen+bin", "recycling+bin",
+        "desk+lamp", "office+chair", "monitor+stand", "keyboard", "mouse", "extension+lead",
+        "phone+charger", "usb+hub", "batteries", "power+strip", "light+bulb"
     ]
 
 
     for term in search_terms:
-        for page in range(1, 8):
+        for page in range(1, 3):
             url = f"https://www.amazon.co.uk/s?k={term}&page={page}"
             Log.info(f"Scraping: {url}")
             products = scrape_amazon_titles(url, max_items=50)
@@ -1305,24 +1380,27 @@ if __name__ == "__main__":
                 if asin and asin not in all_asins:
                     all_asins.add(asin)
                     new_products.append(p)
+            
+            #
 
             if new_products:
                 all_products.extend(new_products)
                 Log.success(f"➕ {len(new_products)} new products")
 
-            for p in new_products:
-                asin = p.get("asin")
-                maybe_add_to_priority(p, priority_db)
-                Log.success(f"⭐ Added high-confidence product: {asin}")
+                for p in new_products:
+                    asin = p.get("asin")
+                    maybe_add_to_priority(p, priority_db)
+                    Log.success(f"⭐ Added high-confidence product: {asin}")
 
-            # Save priority products
-        with open(priority_path, "w", encoding="utf-8") as f:
-            json.dump(priority_db, f, indent=2)
-            Log.success(f"✅ Saved {len(priority_db)} total trusted products.")
+                # ✅ Save after each batch of new products
+                with open(priority_path, "w", encoding="utf-8") as f:
+                    json.dump(priority_db, f, indent=2)
+                    Log.success(f"✅ Saved {len(priority_db)} total trusted products.")
 
-        with open("scraped_products_tmp.json", "w", encoding="utf-8") as f:
-            json.dump(all_products, f, indent=2)
-            Log.info(f"📥 Saved checkpoint: {len(all_products)} total")
+                with open("scraped_products_tmp.json", "w", encoding="utf-8") as f:
+                    json.dump(all_products, f, indent=2)
+                    Log.info(f"📥 Saved checkpoint: {len(all_products)} total")
+
 
         time.sleep(random.uniform(2.5, 4.5))  # anti-bot pause
 

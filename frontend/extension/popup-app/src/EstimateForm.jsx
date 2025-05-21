@@ -3,6 +3,7 @@ import "./refined.css";
 
 function smartGuessMaterial(title = "") {
   const lower = title.toLowerCase();
+
   const guesses = [
     { keywords: ["headphones", "earbuds"], material: "plastic" },
     { keywords: ["table", "desk", "shelf"], material: "wood" },
@@ -12,23 +13,26 @@ function smartGuessMaterial(title = "") {
     { keywords: ["bottle", "jug"], material: "plastic" },
     { keywords: ["glass", "mirror", "window"], material: "glass" },
   ];
+
   for (const guess of guesses) {
     if (guess.keywords.some((kw) => lower.includes(kw))) {
       return guess.material;
     }
   }
+
   return null;
 }
 
 export default function EstimateForm() {
-  const [userInputUrl, setUserInputUrl] = useState("");
-  const [userPostcode, setUserPostcode] = useState(localStorage.getItem("postcode") || "");
-  const [includePackaging, setIncludePackaging] = useState(true);
-  const [selectedMode, setSelectedMode] = useState("Ship");
+  const [url, setUrl] = useState("");
+  const [postcode, setPostcode] = useState(localStorage.getItem("postcode") || "");
+  const [quantity, setQuantity] = useState(1);
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [productData, setProductData] = useState(null);
+  const [includePackaging, setIncludePackaging] = useState(true);
   const [equivalenceView, setEquivalenceView] = useState(0);
+  const [selectedMode, setSelectedMode] = useState("Ship");
   const [materialInsights, setMaterialInsights] = useState({});
 
   useEffect(() => {
@@ -38,61 +42,51 @@ export default function EstimateForm() {
       .catch((err) => console.warn("Could not load material insights:", err));
   }, []);
 
+  useEffect(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const currentUrl = tabs[0]?.url || "";
+      if (currentUrl.includes("amazon.co.uk")) {
+        setUrl(currentUrl);
+      }
+    });
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setProductData(null);
-    localStorage.setItem("postcode", userPostcode);
+    setResult(null);
+    localStorage.setItem("postcode", postcode);
 
     try {
-      const res = await fetch("https://dsp-environmentaltracker-1.onrender.com/estimate_emissions", {
+      const res = await fetch("http://127.0.0.1:5000/estimate_emissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amazon_url: userInputUrl,
-          postcode: userPostcode,
+          amazon_url: url || "",
+          postcode: postcode || "",
           include_packaging: includePackaging,
           override_transport_mode: selectedMode,
         }),
       });
 
-      const data = await res.json();
-      if (data.job_id) {
-        checkJobStatus(data.job_id);
-      } else {
-        throw new Error("Failed to queue job");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText);
       }
+
+      const data = await res.json();
+      console.log("Received result:", data);
+      setResult(data);
     } catch (err) {
-      console.error("Submission error:", err);
-      setError("Failed to submit estimate job.");
+      setError("Failed to fetch product data. Check console for details.");
+    } finally {
       setLoading(false);
     }
   };
 
-  const checkJobStatus = async (jobId) => {
-    try {
-      const res = await fetch(`https://dsp-environmentaltracker-1.onrender.com/job_status/${jobId}`);
-      const data = await res.json();
-
-      if (data.status === "done") {
-        setProductData(data.data);
-        setLoading(false);
-      } else if (data.status === "error") {
-        setError("Scraping failed. Please try a different URL.");
-        setLoading(false);
-      } else {
-        setTimeout(() => checkJobStatus(jobId), 3000);
-      }
-    } catch (err) {
-      console.error("Polling error:", err);
-      setError("Could not check job status.");
-      setLoading(false);
-    }
-  };
-
-  const attributes = productData?.data?.attributes || {};
-  const productTitle = productData?.data?.title || productData?.title || "Untitled Product";
+  const attributes = result?.data?.attributes || {};
+  const productTitle = result?.data?.title || result?.title || "Untitled Product";
 
   const rawMaterial = attributes.material_type?.toLowerCase() || "other";
   let guessedMaterial = rawMaterial;
@@ -116,46 +110,49 @@ export default function EstimateForm() {
 
   return (
     <div style={{ padding: "1rem" }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
+        <button className="text-center" onClick={() => document.body.classList.toggle("dark-mode")}>
+          🌃 Toggle Theme
+        </button>
+      </div>
+
       <h2 className="text-center">Amazon Shipping <br /> Emissions Estimator</h2>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: "1rem" }}>
-        <input
-          type="text"
-          placeholder="Amazon product URL"
-          value={userInputUrl}
-          onChange={(e) => setUserInputUrl(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="Enter your postcode"
-          value={userPostcode}
-          onChange={(e) => setUserPostcode(e.target.value)}
-        />
+      <div style={{ marginBottom: "15px" }}>
         <label>
-          <input
-            type="checkbox"
-            checked={includePackaging}
-            onChange={(e) => setIncludePackaging(e.target.checked)}
-          /> Include packaging weight
-        </label>
-        <label>
-          Transport Mode:
+          Change Shipping Mode:
           <select value={selectedMode} onChange={(e) => setSelectedMode(e.target.value)}>
             <option value="Ship">Ship 🚢</option>
             <option value="Air">Air ✈️</option>
             <option value="Truck">Truck 🚚</option>
           </select>
         </label>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ marginBottom: "1rem" }}>
+        <input type="text" placeholder="Amazon product URL" value={url} onChange={(e) => setUrl(e.target.value)} />
+        <input type="text" placeholder="Enter your postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} />
+        <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value))} />
+        <label>
+          <input type="checkbox" checked={includePackaging} onChange={(e) => setIncludePackaging(e.target.checked)} />{" "}
+          Include packaging weight
+          <div className="text-muted">(5% estimated extra weight for packaging)</div>
+        </label>
         <button type="submit" disabled={loading}>
-          {loading ? "Estimating..." : "Estimate Emissions"}
+          {loading ? (
+            <span>
+              <span className="spinner" style={{ marginRight: "6px" }}></span>
+              Estimating...
+            </span>
+          ) : (
+            "Estimate Emissions"
+          )}
         </button>
       </form>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
 
-      {loading && <p>⏳ Scraping product and estimating emissions...</p>}
-
-      {productData && (
+      {result && (
         <div className="result-card">
           <div
             className="text-center"
@@ -200,10 +197,6 @@ export default function EstimateForm() {
                 {guessedMaterial !== rawMaterial && " (guessed)"}
               </span>
             </p>
-            <p>
-              <strong>Transport Mode Used in Calculation:</strong>{" "}
-              {attributes.transport_mode ?? "N/A"}
-            </p>
 
             <p>
               <strong>Selected Transport Mode:</strong>{" "}
@@ -246,6 +239,12 @@ export default function EstimateForm() {
 
             <p>
               <strong>Weight (incl. packaging):</strong> {attributes.weight_kg ?? "N/A"} kg
+            </p>
+            <p>
+              <strong>Recyclability</strong> {attributes.recyclability ?? "N/A"} 
+            </p>
+            <p>
+              <strong>Origin</strong> {attributes.origin ?? "N/A"} 
             </p>
             <p>
               <strong>Carbon Emissions:</strong> {attributes.carbon_kg ?? "N/A"} kg CO₂

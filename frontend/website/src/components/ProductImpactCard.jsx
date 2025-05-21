@@ -1,4 +1,4 @@
-// src/components/ProductImpactCard.jsx
+
 import React from "react";
 import MLvsDEFRAChart from "./MLvsDefraChart";
 import CarbonMetricsCircle from "./CarbonMetricsCircle";
@@ -38,7 +38,8 @@ export default function ProductImpactCard({ result, showML, toggleShowML }) {
               : "N/A confident"}
           </span>
         </li>
-        <li><strong>Material Type:</strong> {attr.material_type}</li>
+        <li><strong>Material Type:</strong> {attr.material_type || "Unknown"}</li>
+
         <li><strong>Transport Mode:</strong> {attr.transport_mode}</li>
         <li><strong>Recyclability:</strong> {attr.recyclability}</li>
         <li><strong>Carbon Emissions:</strong> {attr.carbon_kg} kg CO₂</li>
