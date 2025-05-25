@@ -19,7 +19,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Step 2: Now you can import from common
-from common.data.brand_origin_resolver import get_brand_origin
+from common.data.brand_origin_resolver import get_brand_origin, get_brand_origin_intelligent
 from backend.utils.co2_data import load_material_co2_data
 
 import traceback
@@ -181,11 +181,30 @@ origin_hubs = {
     "Spain": {"lat": 40.4168, "lon": -3.7038, "city": "Madrid"},
     "Poland": {"lat": 52.2297, "lon": 21.0122, "city": "Warsaw"},
     "Netherlands": {"lat": 52.3676, "lon": 4.9041, "city": "Amsterdam"},
+    "Indonesia": {"lat": -6.2088, "lon": 106.8456, "city": "Jakarta"},
+    "France": {"lat": 48.8566, "lon": 2.3522, "city": "Paris"},
+    "Ireland": {"lat": 53.3498, "lon": -6.2603, "city": "Dublin"},
+    "Canada": {"lat": 45.4215, "lon": -75.6972, "city": "Ottawa"},
+    "Switzerland": {"lat": 46.9480, "lon": 7.4474, "city": "Bern"},
+    "Australia": {"lat": -33.8688, "lon": 151.2093, "city": "Sydney"},
+    "Sweden": {"lat": 59.3293, "lon": 18.0686, "city": "Stockholm"},
+    "Finland": {"lat": 60.1699, "lon": 24.9384, "city": "Helsinki"},
+    "Mexico": {"lat": 19.4326, "lon": -99.1332, "city": "Mexico City"},
+    "Belgium": {"lat": 50.8503, "lon": 4.3517, "city": "Brussels"},
+    "Denmark": {"lat": 55.6761, "lon": 12.5683, "city": "Copenhagen"},
+    "Norway": {"lat": 59.9139, "lon": 10.7522, "city": "Oslo"},
+    "Thailand": {"lat": 13.7563, "lon": 100.5018, "city": "Bangkok"},
+    "Vietnam": {"lat": 21.0285, "lon": 105.8542, "city": "Hanoi"},
+    "Turkey": {"lat": 39.9334, "lon": 32.8597, "city": "Ankara"},
+    "Brazil": {"lat": -23.5505, "lon": -46.6333, "city": "Sao Paulo"},
 }
 uk_hub = {"lat": 51.8821, "lon": -0.5057, "city": "Dunstable"}
 
 known_brand_origins = {
     "huel": "UK",
+    "the bulk protein company": "UK",
+    "bulk protein company": "UK",
+    "mitre": "UK",
     "avm": "Germany",
     "anker": "China",
     "bosch": "Germany",
@@ -233,21 +252,33 @@ def fuzzy_normalize_origin(raw_origin):
 
     # Keyword-based fuzzy mapping
     fuzzy_map = {
-        "uk": ["united kingdom", "uk", "england", "scotland", "wales"],
-        "usa": ["united states", "united states of america", "us", "usa"],
-        "china": ["china", "prc"],
-        "germany": ["germany"],
-        "france": ["france"],
-        "italy": ["italy"],
-        "japan": ["japan"],
-        "ireland": ["ireland", "eire"],
-        "netherlands": ["netherlands", "holland"],
-        "canada": ["canada"],
-        "switzerland": ["switzerland"],
-        "australia": ["australia"],
-        "sweden": ["sweden"],
-        "finland": ["finland"],
-        "mexico": ["mexico"],
+        "UK": ["united kingdom", "uk", "england", "scotland", "wales", "britain", "great britain"],
+        "USA": ["united states", "united states of america", "us", "usa", "america"],
+        "China": ["china", "prc", "people's republic of china"],
+        "Germany": ["germany", "deutschland"],
+        "France": ["france"],
+        "Italy": ["italy", "italia"],
+        "Japan": ["japan", "nippon"],
+        "Ireland": ["ireland", "eire"],
+        "Netherlands": ["netherlands", "holland"],
+        "Canada": ["canada"],
+        "Switzerland": ["switzerland"],
+        "Australia": ["australia"],
+        "Sweden": ["sweden"],
+        "Finland": ["finland"],
+        "Mexico": ["mexico"],
+        "Indonesia": ["indonesia"],
+        "India": ["india"],
+        "Spain": ["spain", "espana"],
+        "Poland": ["poland", "polska"],
+        "Belgium": ["belgium"],
+        "Denmark": ["denmark"],
+        "Norway": ["norway"],
+        "South Korea": ["south korea", "korea", "republic of korea"],
+        "Thailand": ["thailand"],
+        "Vietnam": ["vietnam"],
+        "Turkey": ["turkey"],
+        "Brazil": ["brazil"],
     }
 
     for country, keywords in fuzzy_map.items():
@@ -265,11 +296,859 @@ def estimate_origin_country(title):
         return "Germany"
     elif "apple" in title:
         return "USA"
+    elif "nike" in title:
+        return "USA"  # Nike HQ is in USA, but products are made globally
     elif "sony" in title:
         return "Japan"
     elif "dyson" in title:
         return "UK"
     return "China"
+
+def extract_origin_from_structured_data(driver):
+    """
+    Extract origin from Amazon's structured data sections
+    Returns: {"found": bool, "country": str, "method": str, "raw_text": str}
+    """
+    try:
+        # Method 1: Product Details table (highest priority)
+        details_selectors = [
+            "table.a-keyvalue tr",
+            "#detailBullets_feature_div li",
+            ".a-section table tr"
+        ]
+        
+        for selector in details_selectors:
+            try:
+                rows = driver.find_elements(By.CSS_SELECTOR, selector)
+                for row in rows:
+                    row_text = row.text.lower()
+                    if "country of origin" in row_text:
+                        # Extract the value after "country of origin"
+                        match = re.search(r"country\s+of\s+origin[:\s]*([a-zA-Z\s,]+)", row_text, re.IGNORECASE)
+                        if match:
+                            raw_country = match.group(1).strip()
+                            normalized_country = fuzzy_normalize_origin(raw_country)
+                            if normalized_country != "Unknown":
+                                return {
+                                    "found": True,
+                                    "country": normalized_country,
+                                    "method": f"product_details_table_{selector}",
+                                    "raw_text": row.text.strip()
+                                }
+            except Exception as e:
+                continue
+        
+        # Method 2: Technical Specifications section
+        try:
+            tech_specs = driver.find_elements(By.CSS_SELECTOR, "#technicalSpecifications_section_1 tr")
+            for spec_row in tech_specs:
+                spec_text = spec_row.text.lower()
+                if "country" in spec_text and "origin" in spec_text:
+                    cells = spec_row.find_elements(By.TAG_NAME, "td")
+                    if len(cells) >= 2:
+                        country_value = cells[1].text.strip()
+                        normalized_country = fuzzy_normalize_origin(country_value)
+                        if normalized_country != "Unknown":
+                            return {
+                                "found": True,
+                                "country": normalized_country,
+                                "method": "technical_specifications",
+                                "raw_text": spec_row.text.strip()
+                            }
+        except Exception as e:
+            pass
+        
+        # Method 3: Product feature bullets with explicit origin mention
+        try:
+            bullets = driver.find_elements(By.CSS_SELECTOR, "#feature-bullets li, .a-unordered-list li")
+            for bullet in bullets:
+                bullet_text = bullet.text.lower()
+                if "country of origin" in bullet_text or "made in" in bullet_text:
+                    # Extract country from bullet point
+                    origin_patterns = [
+                        r"country\s+of\s+origin[:\s]*([a-zA-Z\s,]+)",
+                        r"made\s+in[:\s]*([a-zA-Z\s,]+)"
+                    ]
+                    for pattern in origin_patterns:
+                        match = re.search(pattern, bullet_text, re.IGNORECASE)
+                        if match:
+                            raw_country = match.group(1).strip()
+                            # Clean up trailing text
+                            raw_country = re.sub(r'[,;.].*$', '', raw_country).strip()
+                            normalized_country = fuzzy_normalize_origin(raw_country)
+                            if normalized_country != "Unknown":
+                                return {
+                                    "found": True,
+                                    "country": normalized_country,
+                                    "method": "feature_bullets",
+                                    "raw_text": bullet.text.strip()
+                                }
+        except Exception as e:
+            pass
+            
+        # No structured origin data found
+        return {"found": False, "country": "Unknown", "method": "none", "raw_text": ""}
+        
+    except Exception as e:
+        print(f"⚠️ Error in structured origin extraction: {e}")
+        return {"found": False, "country": "Unknown", "method": "error", "raw_text": str(e)}
+
+def extract_weight_from_structured_data(driver):
+    """
+    Extract weight from Amazon's structured data sections  
+    Returns: {"found": bool, "weight_kg": float, "method": str, "raw_text": str}
+    """
+    try:
+        # Method 1: Product Dimensions with weight (highest priority)
+        page_text = driver.page_source
+        
+        # Enhanced patterns for dimensions + weight
+        dimension_patterns = [
+            r"product\s+dimensions[:\s]+[\d\s.x×*cm;,]+[;,]\s*([\d.]+)\s*g\b",
+            r"package\s+dimensions[:\s]+[\d\s.x×*cm;,]+[;,]\s*([\d.]+)\s*g\b",
+            r"[\d.]+\s*[x×]\s*[\d.]+\s*[x×]\s*[\d.]+\s*cm[;,\s]+([\d.]+)\s*g\b"
+        ]
+        
+        for pattern in dimension_patterns:
+            match = re.search(pattern, page_text, re.IGNORECASE)
+            if match:
+                weight_grams = float(match.group(1))
+                weight_kg = weight_grams / 1000
+                return {
+                    "found": True,
+                    "weight_kg": weight_kg,
+                    "method": "product_dimensions",
+                    "raw_text": match.group(0)
+                }
+        
+        # Method 2: Dedicated weight fields in product details
+        details_selectors = [
+            "table.a-keyvalue tr",
+            "#detailBullets_feature_div li"
+        ]
+        
+        for selector in details_selectors:
+            try:
+                rows = driver.find_elements(By.CSS_SELECTOR, selector)
+                for row in rows:
+                    row_text = row.text.lower()
+                    if any(kw in row_text for kw in ["weight", "item weight", "shipping weight"]):
+                        # Extract weight value
+                        weight_patterns = [
+                            r"([\d.]+)\s*kg\b",
+                            r"([\d.]+)\s*g\b"
+                        ]
+                        for w_pattern in weight_patterns:
+                            w_match = re.search(w_pattern, row_text)
+                            if w_match:
+                                weight_val = float(w_match.group(1))
+                                if "kg" in w_match.group(0):
+                                    weight_kg = weight_val
+                                else:  # grams
+                                    weight_kg = weight_val / 1000
+                                
+                                return {
+                                    "found": True,
+                                    "weight_kg": weight_kg,
+                                    "method": f"product_details_{selector}",
+                                    "raw_text": row.text.strip()
+                                }
+            except Exception as e:
+                continue
+        
+        # No structured weight data found
+        return {"found": False, "weight_kg": 0, "method": "none", "raw_text": ""}
+        
+    except Exception as e:
+        print(f"⚠️ Error in structured weight extraction: {e}")
+        return {"found": False, "weight_kg": 0, "method": "error", "raw_text": str(e)}
+
+def extract_materials_from_structured_data(driver):
+    """
+    Extract ALL materials from Amazon's structured data sections
+    Returns: {"found": bool, "materials": [{"name": str, "confidence": str, "weight": float}], "primary_material": str, "method": str, "raw_text": str}
+    """
+    try:
+        all_materials = []
+        
+        details_selectors = [
+            "table.a-keyvalue tr",
+            "#detailBullets_feature_div li"
+        ]
+        
+        for selector in details_selectors:
+            try:
+                rows = driver.find_elements(By.CSS_SELECTOR, selector)
+                for row in rows:
+                    row_text = row.text.lower()
+                    original_text = row.text.strip()
+                    
+                    # Look for material field patterns
+                    material_patterns = [
+                        (r"material[:\s]*([a-zA-Z\s,]+)", "high"),
+                        (r"(?:sole|outer|upper|lining)\s+material[:\s]*([a-zA-Z\s,]+)", "high"),
+                        (r"(?:material|fabric)\s+(?:composition|type)[:\s]*([a-zA-Z\s,]+)", "medium"),
+                        (r"made\s+(?:of|from)[:\s]*([a-zA-Z\s,]+)", "medium")
+                    ]
+                    
+                    # Debug: Log what we're checking
+                    if "material" in row_text:
+                        print(f"🔍 DEBUG: Found 'material' in row: {original_text[:100]}...")
+                    
+                    for pattern, confidence in material_patterns:
+                        match = re.search(pattern, row_text, re.IGNORECASE)
+                        if match:
+                            raw_materials = match.group(1).strip()
+                            
+                            # Parse multiple materials: "Aluminium, Plastic" -> ["Aluminium", "Plastic"]
+                            materials_found = parse_multiple_materials(raw_materials)
+                            
+                            for material_info in materials_found:
+                                if material_info["normalized"] != "Unknown":
+                                    all_materials.append({
+                                        "name": material_info["normalized"],
+                                        "confidence": confidence,
+                                        "weight": material_info["weight"],
+                                        "method": f"structured_{selector}",
+                                        "raw_text": original_text
+                                    })
+                            
+                            if materials_found:  # Found materials in this row, don't check other patterns
+                                break
+                                
+            except Exception as e:
+                continue
+        
+        if all_materials:
+            # Remove duplicates and prioritize by confidence and material importance
+            unique_materials = deduplicate_and_prioritize_materials(all_materials)
+            primary_material = determine_primary_material(unique_materials)
+            
+            return {
+                "found": True,
+                "materials": unique_materials,
+                "primary_material": primary_material,
+                "method": "structured_multi_material",
+                "raw_text": "; ".join([m["raw_text"] for m in unique_materials[:3]])  # First 3 sources
+            }
+        
+        # No structured material data found
+        return {"found": False, "materials": [], "primary_material": "Unknown", "method": "none", "raw_text": ""}
+        
+    except Exception as e:
+        print(f"⚠️ Error in structured material extraction: {e}")
+        return {"found": False, "materials": [], "primary_material": "Unknown", "method": "error", "raw_text": str(e)}
+
+def parse_multiple_materials(raw_materials_text):
+    """
+    Parse text like "Aluminium, Plastic" or "59% Rubber, 41% Cotton" into structured materials
+    Returns: [{"raw": str, "normalized": str, "weight": float}, ...]
+    """
+    materials = []
+    
+    # Handle percentage-based materials: "59% Rubber, 41% Cotton"
+    percentage_pattern = r"(\d+)%\s*([a-zA-Z\s\-]+)"
+    percentage_matches = re.findall(percentage_pattern, raw_materials_text, re.IGNORECASE)
+    
+    if percentage_matches:
+        for percent_str, material_name in percentage_matches:
+            weight = float(percent_str) / 100.0
+            normalized = normalize_material(material_name.strip())
+            materials.append({
+                "raw": f"{percent_str}% {material_name.strip()}",
+                "normalized": normalized,
+                "weight": weight
+            })
+    else:
+        # Handle comma-separated materials: "Aluminium, Plastic"
+        material_parts = [part.strip() for part in raw_materials_text.split(',')]
+        
+        # If multiple materials, assume equal weight distribution
+        weight_per_material = 1.0 / len(material_parts) if len(material_parts) > 1 else 1.0
+        
+        for material_part in material_parts:
+            # Clean up the material name
+            cleaned_material = re.sub(r'[^\w\s-]', '', material_part).strip()
+            if len(cleaned_material) > 1:  # Avoid single characters
+                normalized = normalize_material(cleaned_material)
+                if normalized != "Unknown":
+                    materials.append({
+                        "raw": material_part,
+                        "normalized": normalized,
+                        "weight": weight_per_material
+                    })
+    
+    return materials
+
+def deduplicate_and_prioritize_materials(materials_list):
+    """Remove duplicates and prioritize materials by importance and confidence"""
+    
+    # Material priority ranking (higher number = more important for environmental impact)
+    material_priority = {
+        "Aluminum": 9, "Aluminium": 9, "Steel": 8, "Metal": 7,
+        "Glass": 6, "Leather": 5, "Cotton": 4, "Rubber": 3,
+        "Plastic": 2, "Synthetic": 1, "Unknown": 0
+    }
+    
+    # Confidence priority
+    confidence_priority = {"high": 3, "medium": 2, "low": 1, "unknown": 0}
+    
+    # Group by material name to remove duplicates
+    material_groups = {}
+    for material in materials_list:
+        name = material["name"]
+        if name not in material_groups:
+            material_groups[name] = material
+        else:
+            # Keep the one with higher confidence
+            if confidence_priority.get(material["confidence"], 0) > confidence_priority.get(material_groups[name]["confidence"], 0):
+                material_groups[name] = material
+    
+    # Sort by priority (environmental impact) and confidence
+    unique_materials = list(material_groups.values())
+    unique_materials.sort(
+        key=lambda m: (
+            material_priority.get(m["name"], 0),
+            confidence_priority.get(m["confidence"], 0)
+        ), 
+        reverse=True
+    )
+    
+    return unique_materials
+
+def determine_primary_material(materials_list):
+    """Determine the primary material for environmental scoring"""
+    if not materials_list:
+        return "Unknown"
+    
+    # Primary material is the highest priority material found
+    return materials_list[0]["name"]
+
+def calculate_compound_recyclability(materials_list):
+    """
+    Calculate weighted recyclability for compound materials
+    Returns: (level, percentage, description)
+    """
+    if not materials_list:
+        return "Unknown", 0, "No material information available"
+    
+    # Individual material recyclability rates
+    recyclability_map = {
+        "Aluminum": 90, "Aluminium": 90, "Steel": 85, "Glass": 80,
+        "Paper": 75, "Cardboard": 88, "Cotton": 50, "Polyester": 45,
+        "Plastic": 55, "Rubber": 20, "Leather": 10, "Synthetic": 30,
+        "Metal": 80, "Unknown": 0
+    }
+    
+    # Calculate weighted average
+    total_weight = sum(m["weight"] for m in materials_list)
+    if total_weight == 0:
+        total_weight = 1.0  # Avoid division by zero
+    
+    weighted_recyclability = 0
+    material_descriptions = []
+    
+    for material in materials_list:
+        material_recyclability = recyclability_map.get(material["name"], 0)
+        weight_contribution = material["weight"] / total_weight
+        weighted_recyclability += material_recyclability * weight_contribution
+        
+        if material_recyclability > 0:
+            material_descriptions.append(f"{material['name']} ({material_recyclability}%)")
+    
+    # Determine overall level
+    if weighted_recyclability >= 70:
+        level = "High"
+    elif weighted_recyclability >= 40:
+        level = "Medium"
+    elif weighted_recyclability >= 10:
+        level = "Low"
+    else:
+        level = "Very Low"
+    
+    # Create description
+    if len(materials_list) == 1:
+        description = f"Single material: {material_descriptions[0] if material_descriptions else 'Unknown material'}"
+    else:
+        description = f"Compound material: {', '.join(material_descriptions[:3])}"  # Limit to 3 materials
+        if len(material_descriptions) > 3:
+            description += f" and {len(material_descriptions) - 3} more"
+    
+    return level, int(weighted_recyclability), description
+
+def get_brand_intelligent_origin(brand_name, product_title="", product_category=""):
+    """
+    Use brand intelligence combined with product context for smarter origin detection
+    Returns: {"country": str, "confidence": str, "reasoning": str}
+    """
+    brand_lower = brand_name.lower().strip()
+    title_lower = product_title.lower()
+    
+    # Multi-location brands with product-specific manufacturing patterns
+    brand_intelligence = {
+        "ninja": {
+            "headquarters": "USA",
+            "manufacturing_patterns": {
+                "kitchen appliances": {"primary": "China", "secondary": "Vietnam", "confidence": "medium"},
+                "cookware": {"primary": "China", "confidence": "medium"},
+                "air fryer": {"primary": "China", "confidence": "high"},
+                "blender": {"primary": "China", "confidence": "high"},
+                "default": {"primary": "China", "confidence": "low"}
+            }
+        },
+        "instant pot": {
+            "headquarters": "Canada", 
+            "manufacturing_patterns": {
+                "pressure cooker": {"primary": "China", "confidence": "high"},
+                "air fryer": {"primary": "China", "confidence": "high"},
+                "default": {"primary": "China", "confidence": "medium"}
+            }
+        },
+        "tefal": {
+            "headquarters": "France",
+            "manufacturing_patterns": {
+                "cookware": {"primary": "France", "secondary": "China", "confidence": "medium"},
+                "small appliances": {"primary": "China", "confidence": "medium"},
+                "default": {"primary": "France", "confidence": "low"}
+            }
+        },
+        "kitchenaid": {
+            "headquarters": "USA",
+            "manufacturing_patterns": {
+                "stand mixer": {"primary": "USA", "confidence": "high"},
+                "small appliances": {"primary": "China", "confidence": "medium"},
+                "default": {"primary": "USA", "confidence": "low"}
+            }
+        }
+    }
+    
+    if brand_lower in brand_intelligence:
+        brand_info = brand_intelligence[brand_lower]
+        patterns = brand_info["manufacturing_patterns"]
+        
+        # Try to match product category/type
+        best_match = None
+        for product_type, location_info in patterns.items():
+            if product_type in title_lower:
+                best_match = location_info
+                reasoning = f"Brand {brand_name} + product type '{product_type}' → {location_info['primary']}"
+                break
+        
+        if not best_match:
+            best_match = patterns.get("default", {"primary": "Unknown", "confidence": "unknown"})
+            reasoning = f"Brand {brand_name} default manufacturing location"
+        
+        return {
+            "country": best_match["primary"],
+            "confidence": best_match["confidence"],
+            "reasoning": reasoning
+        }
+    
+    # Fallback for unknown brands - try simple heuristics
+    if any(word in title_lower for word in ["kitchen", "cooking", "appliance"]):
+        return {
+            "country": "China",  # Most kitchen appliances manufactured in China
+            "confidence": "low",
+            "reasoning": "Generic kitchen appliance → likely China manufacturing"
+        }
+    
+    return {
+        "country": "Unknown",
+        "confidence": "unknown", 
+        "reasoning": f"No intelligence available for brand: {brand_name}"
+    }
+
+
+def resolve_origin(scraped, fallback, field_name="country", context=None):
+    """
+    🎯 MODULAR FIELD RESOLUTION - Intelligent conflict resolution with confidence scoring
+    
+    This function implements enterprise-grade logic for resolving conflicts between
+    scraped data and fallback mappings. Can be reused for any field (origin, material, packaging).
+    
+    Args:
+        scraped: dict with {"value": str, "source": str, "confidence": str}
+        fallback: dict with {"value": str, "source": str, "confidence": str} 
+        field_name: str - name of field being resolved (for logging)
+        context: dict - additional context (brand_name, product_title, category, etc.)
+        
+    Returns: dict with {"value": str, "confidence": str, "source": str, "reasoning": str}
+    
+    Logic Rules (as requested):
+    1. If scraped matches fallback → high confidence
+    2. If they don't match → intelligent logic using source trust hierarchy  
+    3. If only fallback exists → medium confidence
+    4. If neither exists → "Unknown" with low confidence
+    """
+    
+    # Normalize inputs
+    scraped_value = scraped.get("value", "Unknown") if scraped else "Unknown"
+    scraped_source = scraped.get("source", "none") if scraped else "none"
+    fallback_value = fallback.get("value", "Unknown") if fallback else "Unknown"
+    fallback_source = fallback.get("source", "none") if fallback else "none"
+    
+    context = context or {}
+    brand_name = context.get("brand_name", "")
+    
+    # Source trust hierarchy (higher = more trustworthy)
+    source_trust_scores = {
+        "page_explicit": 95,        # Direct "Made in China" text
+        "techspec_origin": 90,      # Technical specifications section  
+        "product_details": 85,      # Product details table
+        "blob_fallback": 75,        # Pattern matching in descriptions
+        "brand_intelligence": 70,   # AI context-aware analysis
+        "shipping_panel": 60,       # Inferred from shipping info
+        "brand_db_verified": 55,    # Verified brand database
+        "brand_db_generic": 40,     # Generic brand mapping
+        "title_guess": 30,          # Heuristic pattern matching
+        "none": 0
+    }
+    
+    scraped_trust = source_trust_scores.get(scraped_source, 0)
+    fallback_trust = source_trust_scores.get(fallback_source, 0)
+    
+    # 🎯 RULE 1: Perfect Match → High Confidence
+    if scraped_value != "Unknown" and fallback_value != "Unknown" and scraped_value == fallback_value:
+        return {
+            "value": scraped_value,
+            "confidence": "very_high",
+            "source": f"{scraped_source}_confirmed",
+            "reasoning": f"✅ Scraped data ({scraped_source}) matches fallback ({fallback_source}): {scraped_value}"
+        }
+    
+    # 🎯 RULE 2: Conflict Resolution → Trust Hierarchy + Context
+    elif scraped_value != "Unknown" and fallback_value != "Unknown" and scraped_value != fallback_value:
+        
+        # High-trust scraped data wins
+        if scraped_trust >= 85:
+            return {
+                "value": scraped_value,
+                "confidence": "high", 
+                "source": scraped_source,
+                "reasoning": f"📄 High-trust page data ({scraped_source}) overrides fallback: {scraped_value} vs {fallback_value}"
+            }
+        
+        # Medium-trust scraped vs fallback → context matters
+        elif scraped_trust >= 60:
+            if fallback_trust <= 50:  # Scraped wins over weak fallback
+                return {
+                    "value": scraped_value,
+                    "confidence": "medium_high",
+                    "source": scraped_source,
+                    "reasoning": f"📝 Medium-trust scraped data ({scraped_source}) preferred over weak fallback: {scraped_value}"
+                }
+            else:  # Close call → choose higher trust
+                winner = scraped_value if scraped_trust >= fallback_trust else fallback_value
+                winner_source = scraped_source if scraped_trust >= fallback_trust else fallback_source
+                return {
+                    "value": winner,
+                    "confidence": "medium",
+                    "source": f"{winner_source}_contested", 
+                    "reasoning": f"⚖️ Close contest: {scraped_value}({scraped_trust}) vs {fallback_value}({fallback_trust}) → chose {winner}"
+                }
+        
+        # Low-trust scraped → fallback wins
+        else:
+            return {
+                "value": fallback_value,
+                "confidence": "medium",
+                "source": f"{fallback_source}_override",
+                "reasoning": f"🔄 Fallback overrides low-trust scraped: {fallback_value} (fallback) vs {scraped_value} (weak scraped)"
+            }
+    
+    # 🎯 RULE 3: Only Scraped Data Available
+    elif scraped_value != "Unknown" and fallback_value == "Unknown":
+        confidence_map = {
+            (95, 100): "high",
+            (75, 94): "medium_high", 
+            (50, 74): "medium",
+            (0, 49): "low_medium"
+        }
+        
+        confidence = "low"
+        for (min_score, max_score), conf_level in confidence_map.items():
+            if min_score <= scraped_trust <= max_score:
+                confidence = conf_level
+                break
+                
+        return {
+            "value": scraped_value,
+            "confidence": confidence,
+            "source": scraped_source,
+            "reasoning": f"📋 Only scraped data available from {scraped_source}: {scraped_value} (trust: {scraped_trust})"
+        }
+    
+    # 🎯 RULE 4: Only Fallback Available → Medium Confidence  
+    elif scraped_value == "Unknown" and fallback_value != "Unknown":
+        return {
+            "value": fallback_value,
+            "confidence": "medium",
+            "source": fallback_source,
+            "reasoning": f"🔄 Fallback only: {fallback_value} from {fallback_source} (no scraped data found)"
+        }
+    
+    # 🎯 RULE 5: No Data Available → Unknown with Low Confidence
+    else:
+        return {
+            "value": "Unknown",
+            "confidence": "none",
+            "source": "no_data",
+            "reasoning": f"❌ No reliable {field_name} data found for {brand_name or 'product'}"
+        }
+
+
+def validate_and_merge_origin_sources(scraped_origin, scraped_source, brand_name, product_title=""):
+    """
+    🔄 ENHANCED ORIGIN RESOLUTION - Now powered by modular resolve_origin() function
+    
+    This function maintains backward compatibility while leveraging the new modular
+    resolve_origin() system with enhanced brand intelligence integration.
+    
+    Hierarchical Resolution:
+    1. Scraped data vs Brand Intelligence (AI-powered contextual analysis)
+    2. If no high-confidence match → resolve_origin() with fallback chain
+    3. Brand DB fallback as final option
+    
+    Returns: {"country": str, "confidence": str, "source": str, "reasoning": str}
+    """
+    
+    # Get brand intelligence prediction (AI-powered contextual analysis)
+    brand_intel = get_brand_intelligent_origin(brand_name, product_title)
+    
+    # Get generic brand fallback  
+    generic_brand = resolve_brand_origin(brand_name, product_title)
+    generic_country = generic_brand[0] if generic_brand else "Unknown"
+    
+    # Step 1: Check for perfect agreement between scraped data and brand intelligence
+    if (scraped_origin != "Unknown" and brand_intel["country"] != "Unknown" and 
+        scraped_origin == brand_intel["country"]):
+        return {
+            "country": scraped_origin,
+            "confidence": "very_high", 
+            "source": f"{scraped_source}_ai_validated",
+            "reasoning": f"✅ Perfect match: Scraped ({scraped_source}) + AI intelligence agree on {scraped_origin}"
+        }
+    
+    # Step 2: Use modular resolve_origin for intelligent conflict resolution
+    # Create structured input for the modular function
+    scraped_data = {
+        "value": scraped_origin,
+        "source": scraped_source,
+        "confidence": "scraped"
+    } if scraped_origin != "Unknown" else None
+    
+    # Prioritize brand intelligence over generic brand DB
+    best_fallback = None
+    if brand_intel["country"] != "Unknown" and brand_intel["confidence"] in ["high", "medium"]:
+        best_fallback = {
+            "value": brand_intel["country"],
+            "source": "brand_intelligence", 
+            "confidence": brand_intel["confidence"]
+        }
+    elif generic_country != "Unknown":
+        best_fallback = {
+            "value": generic_country,
+            "source": "brand_db_generic",
+            "confidence": "low"
+        }
+    
+    # Apply modular resolution logic
+    context = {
+        "brand_name": brand_name,
+        "product_title": product_title
+    }
+    
+    result = resolve_origin(scraped_data, best_fallback, "country", context)
+    
+    # Step 3: Enhance reasoning with brand intelligence context when applicable
+    if best_fallback and best_fallback["source"] == "brand_intelligence":
+        if "brand_intelligence" in result["source"]:
+            result["reasoning"] = f"🧠 {brand_intel['reasoning']} (AI analysis)"
+        elif result["value"] == brand_intel["country"]:
+            result["reasoning"] += f" | AI concurs: {brand_intel['reasoning']}"
+        elif brand_intel["country"] != "Unknown":
+            result["reasoning"] += f" | AI suggested: {brand_intel['country']} ({brand_intel['reasoning']})"
+    
+    # Map new modular function output to legacy field names for compatibility
+    return {
+        "country": result["value"],
+        "confidence": result["confidence"], 
+        "source": result["source"],
+        "reasoning": result["reasoning"]
+    }
+
+
+def apply_validation_to_origin_detection(origin_country, origin_source, brand_key, title):
+    """
+    Apply the validation logic to improve origin detection quality
+    This replaces the previous basic fallback logic
+    """
+    validation_result = validate_and_merge_origin_sources(
+        scraped_origin=origin_country,
+        scraped_source=origin_source,
+        brand_name=brand_key,
+        product_title=title
+    )
+    
+    print(f"🔍 Origin Validation Result: {validation_result['reasoning']}")
+    print(f"📊 Final: {validation_result['country']} (confidence: {validation_result['confidence']})")
+    
+    return (
+        validation_result["country"],
+        origin_hubs.get(validation_result["country"], {}).get("city", "Unknown"),
+        validation_result["source"],
+        validation_result["confidence"]
+    )
+
+
+# 🎯 MODULAR FIELD RESOLUTION EXAMPLES - Demonstrating reusability
+# These functions show how resolve_origin() can be reused for any product field
+
+def resolve_material(scraped_material_data, brand_name, product_title=""):
+    """
+    📦 MATERIAL RESOLUTION - Uses modular resolve_origin() for material detection
+    
+    Example usage of the modular system for material field resolution.
+    Demonstrates how the same intelligent logic applies to any product attribute.
+    """
+    
+    # Scraped material data (from Amazon product page)
+    scraped = {
+        "value": scraped_material_data.get("material", "Unknown"),
+        "source": scraped_material_data.get("source", "none"), # e.g. "techspec_material", "title_guess"
+        "confidence": scraped_material_data.get("confidence", "medium")
+    } if scraped_material_data.get("material") != "Unknown" else None
+    
+    # Material fallback data (from brand intelligence or category defaults)
+    material_fallbacks = {
+        "apple": {"value": "Aluminum", "source": "brand_db_verified", "confidence": "high"},
+        "nike": {"value": "Synthetic", "source": "brand_db_verified", "confidence": "medium"},
+        "ikea": {"value": "Wood", "source": "brand_db_generic", "confidence": "medium"}
+    }
+    
+    fallback = material_fallbacks.get(brand_name.lower())
+    
+    context = {
+        "brand_name": brand_name,
+        "product_title": product_title,
+        "field_type": "material"
+    }
+    
+    # Use the same modular logic for material resolution
+    result = resolve_origin(scraped, fallback, "material", context)
+    
+    return {
+        "material": result["value"],
+        "confidence": result["confidence"],
+        "source": result["source"], 
+        "reasoning": result["reasoning"]
+    }
+
+
+def resolve_packaging(scraped_packaging_data, brand_name, product_title=""):
+    """
+    📦 PACKAGING RESOLUTION - Uses modular resolve_origin() for packaging type detection
+    
+    Another example showing how resolve_origin() applies to packaging field resolution
+    with the same intelligent conflict resolution and confidence scoring.
+    """
+    
+    # Scraped packaging data (from Amazon product specifications) 
+    scraped = {
+        "value": scraped_packaging_data.get("packaging_type", "Unknown"),
+        "source": scraped_packaging_data.get("source", "none"), # e.g. "product_details", "shipping_panel"
+        "confidence": scraped_packaging_data.get("confidence", "medium")
+    } if scraped_packaging_data.get("packaging_type") != "Unknown" else None
+    
+    # Packaging fallback data (from category intelligence)
+    packaging_patterns = {
+        "electronics": {"value": "Plastic", "source": "category_default", "confidence": "medium"},
+        "books": {"value": "Paper", "source": "category_default", "confidence": "high"},
+        "food": {"value": "Mixed", "source": "category_default", "confidence": "medium"}
+    }
+    
+    # Determine category from title/brand for fallback
+    product_category = "electronics"  # Could be enhanced with AI classification
+    if any(word in product_title.lower() for word in ["book", "novel", "guide"]):
+        product_category = "books"
+    elif any(word in product_title.lower() for word in ["food", "snack", "organic"]):
+        product_category = "food"
+        
+    fallback = packaging_patterns.get(product_category)
+    
+    context = {
+        "brand_name": brand_name,
+        "product_title": product_title,
+        "product_category": product_category,
+        "field_type": "packaging"
+    }
+    
+    # Same modular logic, different field
+    result = resolve_origin(scraped, fallback, "packaging_type", context)
+    
+    return {
+        "packaging_type": result["value"],
+        "confidence": result["confidence"],
+        "source": result["source"],
+        "reasoning": result["reasoning"]
+    }
+
+
+def demonstrate_modular_usage():
+    """
+    🚀 DEMONSTRATION - Shows how the modular resolve_origin() works across different fields
+    
+    This function provides working examples of how to use the modular system
+    for any product attribute with consistent intelligent resolution logic.
+    """
+    
+    # Example product data
+    product_data = {
+        "brand": "Apple",
+        "title": "Apple iPhone 15 Pro Max - 256GB - Natural Titanium",
+        "scraped_origin": {"value": "China", "source": "techspec_origin"},
+        "scraped_material": {"value": "Titanium", "source": "product_details"},
+        "scraped_packaging": {"value": "Cardboard", "source": "shipping_panel"}
+    }
+    
+    print("🎯 MODULAR FIELD RESOLUTION DEMO")
+    print("=" * 50)
+    
+    # 1. Origin Resolution
+    origin_result = validate_and_merge_origin_sources(
+        scraped_origin=product_data["scraped_origin"]["value"],
+        scraped_source=product_data["scraped_origin"]["source"],
+        brand_name=product_data["brand"],
+        product_title=product_data["title"]
+    )
+    print(f"🌍 ORIGIN: {origin_result['country']} ({origin_result['confidence']})")
+    print(f"   Reasoning: {origin_result['reasoning']}")
+    
+    # 2. Material Resolution  
+    material_result = resolve_material(
+        scraped_material_data=product_data["scraped_material"],
+        brand_name=product_data["brand"],
+        product_title=product_data["title"]
+    )
+    print(f"\n🔧 MATERIAL: {material_result['material']} ({material_result['confidence']})")
+    print(f"   Reasoning: {material_result['reasoning']}")
+    
+    # 3. Packaging Resolution
+    packaging_result = resolve_packaging(
+        scraped_packaging_data=product_data["scraped_packaging"],
+        brand_name=product_data["brand"],
+        product_title=product_data["title"]
+    )
+    print(f"\n📦 PACKAGING: {packaging_result['packaging_type']} ({packaging_result['confidence']})")
+    print(f"   Reasoning: {packaging_result['reasoning']}")
+    
+    print("\n✅ All fields resolved using the same modular resolve_origin() logic!")
+    
+    return {
+        "origin": origin_result,
+        "material": material_result, 
+        "packaging": packaging_result
+    }
 
 def extract_shipping_origin(driver):
     try:
@@ -337,15 +1216,44 @@ def extract_weight(text):
 
     text = text.lower()
 
-    # 1. Match kg first (also handles "kilogram" or "kilograms")
+    # 1. Special handling for Product/Package Dimensions format: "45.01 x 30 x 19.99 cm; 0.6 g"
+    dims_patterns = [
+        r"(?:product|package)\s*dimensions?\s*:?\s*[\d\s.x×*cm;]+;\s*([\d.]+)\s*g",
+        r"[\d.]+\s*x\s*[\d.]+\s*x\s*[\d.]+\s*cm;\s*([\d.]+)\s*g",
+        r"dimensions?\s*:?\s*[\d\s.x×*cm;]+;\s*([\d.]+)\s*g",
+        # More flexible patterns for various Amazon formats
+        r"[\d.]+\s*x\s*[\d.]+\s*x\s*[\d.]+\s*cm[;,]\s*([\d.]+)\s*g",
+        r"product\s+dimensions\s*[:\s]+[\d\s.x×*cm;,]+[;,]\s*([\d.]+)\s*g",
+        # Even more flexible - just look for dimensions followed by weight
+        r"[\d.]+\s*[x×]\s*[\d.]+\s*[x×]\s*[\d.]+\s*cm[;,\s]+([\d.]+)\s*g\b"
+    ]
+    
+    for pattern in dims_patterns:
+        dims_match = re.search(pattern, text, re.IGNORECASE)
+        if dims_match:
+            weight_grams = float(dims_match.group(1))
+            print(f"⚖️ Found weight in dimensions: {weight_grams}g")
+            return round(weight_grams / 1000, 3)
+
+    # 2. Match kg first (also handles "kilogram" or "kilograms")  
     kg_match = re.search(r"([\d.]+)\s?(kg|kilogram|kilograms)", text)
     if kg_match:
         return round(float(kg_match.group(1)), 3)
 
-    # 2. Match grams
-    g_match = re.search(r"([\d.]+)\s?g", text)
+    # 3. Match grams (more flexible pattern)
+    g_match = re.search(r"([\d.]+)\s?(g|grams?|gramme?s?)\b", text)
     if g_match:
         return round(float(g_match.group(1)) / 1000, 3)
+
+    # 4. Weight field with value
+    weight_match = re.search(r"(?:weight|item weight)\s*:?\s*([\d.]+)\s*(kg|g|grams?)", text)
+    if weight_match:
+        weight_val = float(weight_match.group(1))
+        unit = weight_match.group(2)
+        if unit == "kg":
+            return round(weight_val, 3)
+        else:  # grams
+            return round(weight_val / 1000, 3)
 
     return None
 
@@ -359,10 +1267,140 @@ def extract_dimensions(text):
     return None
 
 
+def normalize_material(raw_material):
+    """Normalize and prioritize material names"""
+    if not raw_material:
+        return "Unknown"
+    
+    material_lower = raw_material.lower().strip()
+    
+    # High-priority specific materials
+    if "rubber" in material_lower:
+        return "Rubber"
+    elif "leather" in material_lower:
+        return "Leather"
+    elif "mesh" in material_lower:
+        return "Mesh"
+    elif "cotton" in material_lower:
+        return "Cotton"
+    elif "polyester" in material_lower:
+        return "Polyester"
+    elif "nylon" in material_lower:
+        return "Nylon"
+    elif "plastic" in material_lower:
+        return "Plastic"
+    elif "canvas" in material_lower:
+        return "Canvas"
+    elif "synthetic" in material_lower:
+        return "Synthetic"
+    elif "fabric" in material_lower:
+        return "Fabric"
+    # Medium-priority generic materials  
+    elif "compound" in material_lower:
+        return "Compound"
+    elif "composite" in material_lower:
+        return "Composite"
+    elif "mixed" in material_lower:
+        return "Mixed"
+    elif "various" in material_lower:
+        return "Mixed"
+    elif "textile" in material_lower:
+        return "Textile"
+    # Return cleaned material name if no specific match
+    elif len(material_lower) > 2 and material_lower not in ["other", "unknown", "n/a", "not specified"]:
+        return raw_material.title()
+    else:
+        return "Unknown"
+
 def extract_material(text):
-    match = re.search(r"(?:material|made of|composition)[\s:]+([a-z\s\-]+)", text, re.IGNORECASE)
-    if match:
-        return match.group(1).strip().title()
+    if not text:
+        return None
+    
+    text = text.lower()
+    
+    # 1. Priority extraction from specific Amazon material fields (highest priority)
+    specific_material_fields = [
+        r"sole material\s*:?\s*([a-zA-Z\s\-,]+)",
+        r"outer material\s*:?\s*([a-zA-Z\s\-,]+)", 
+        r"upper material\s*:?\s*([a-zA-Z\s\-,]+)",
+        r"lining material\s*:?\s*([a-zA-Z\s\-,]+)",
+        r"main material\s*:?\s*([a-zA-Z\s\-,]+)",
+        r"primary material\s*:?\s*([a-zA-Z\s\-,]+)"
+    ]
+    
+    # Check specific materials first (highest priority)
+    for field_pattern in specific_material_fields:
+        field_match = re.search(field_pattern, text, re.IGNORECASE)
+        if field_match:
+            raw_material = field_match.group(1).strip()
+            # Clean up the material value
+            raw_material = re.sub(r'[,;.].*$', '', raw_material).strip()
+            raw_material = re.sub(r'\s+(and|or|with|plus).*$', '', raw_material, flags=re.IGNORECASE).strip()
+            
+            # Prioritize specific materials over generic ones
+            material = normalize_material(raw_material)
+            if material and material != "Unknown":
+                print(f"🧬 Found HIGH PRIORITY material: '{raw_material}' → {material}")
+                return material
+    
+    # 1.5. Check general material composition fields (medium priority)
+    general_material_fields = [
+        r"material composition\s*:?\s*([a-zA-Z\s\-,]+)",
+        r"fabric type\s*:?\s*([a-zA-Z\s\-,]+)",
+        r"material\s*:?\s*([a-zA-Z\s\-,]+)"
+    ]
+    
+    composition_material = None
+    for field_pattern in general_material_fields:
+        field_match = re.search(field_pattern, text, re.IGNORECASE)
+        if field_match:
+            raw_material = field_match.group(1).strip()
+            raw_material = re.sub(r'[,;.].*$', '', raw_material).strip()
+            raw_material = re.sub(r'\s+(and|or|with|plus).*$', '', raw_material, flags=re.IGNORECASE).strip()
+            
+            material = normalize_material(raw_material)
+            if material and material != "Unknown":
+                composition_material = material
+                print(f"🧬 Found MEDIUM PRIORITY material: '{raw_material}' → {material}")
+                break
+
+    # 2. Handle detailed material compositions like "59% RUBBER, 16% POLYESTER, 7% TPU, 18% FOAM"
+    material_comp_match = re.search(r"material type\s*:?\s*(.+?)(?:\n|$)", text, re.IGNORECASE)
+    if material_comp_match:
+        comp_text = material_comp_match.group(1).strip()
+        # Extract primary material (highest percentage)
+        percentage_matches = re.findall(r"(\d+)%\s*([a-z]+)", comp_text, re.IGNORECASE)
+        if percentage_matches:
+            # Find material with highest percentage
+            primary_material = max(percentage_matches, key=lambda x: int(x[0]))
+            return primary_material[1].title()
+    
+    # 3. Extract from construction field
+    construction_match = re.search(r"construction\s*:?\s*([a-z\s\-]+)", text, re.IGNORECASE)
+    if construction_match:
+        material = construction_match.group(1).strip()
+        # Extract first material word
+        first_material = re.search(r"([a-z]+)", material, re.IGNORECASE)
+        if first_material:
+            return first_material.group(1).title()
+    
+    # 4. General material extraction (original logic)
+    general_match = re.search(r"(?:material|made of|composition)[\s:]+([a-z\s\-]+)", text, re.IGNORECASE)
+    if general_match:
+        return general_match.group(1).strip().title()
+    
+    # 5. Direct material keywords
+    material_keywords = ["plastic", "rubber", "leather", "cotton", "polyester", "nylon", 
+                        "metal", "steel", "aluminum", "wood", "glass", "ceramic", "silicone"]
+    for keyword in material_keywords:
+        if keyword in text:
+            return keyword.title()
+    
+    # 6. Return composition material as fallback if found
+    if composition_material:
+        print(f"🧬 Using FALLBACK composition material: {composition_material}")
+        return composition_material
+    
     return None
 
 
@@ -406,10 +1444,37 @@ def resolve_brand_origin(brand_key, title_fallback=None):
         city = origin_hubs.get(country, origin_hubs["UK"])["city"]
         return country, city
 
-    # 4. Fallback — guess using product title, and save to brand_locations
+    # 4. Intelligent brand resolution system (NEW ENHANCED DETECTION)
     else:
         Log.warn(f"⚠️ Unrecognized brand: {brand_key}")
-        if title_fallback:
+        
+        # Try intelligent brand resolution first
+        intelligent_result = get_brand_origin_intelligent(
+            brand=brand_key, 
+            product_title=title_fallback or "",
+            additional_context=""
+        )
+        
+        # Use intelligent result if confidence is reasonable
+        if intelligent_result["confidence"] >= 0.50:
+            country = intelligent_result["country"]
+            city = intelligent_result.get("city", "Unknown")
+            if city == "Unknown":
+                city = origin_hubs.get(country, origin_hubs["UK"])["city"]
+            
+            brand_locations[brand_key] = {
+                "origin": {
+                    "country": country,
+                    "city": city
+                },
+                "fulfillment": "UK"
+            }
+            save_brand_locations()
+            Log.success(f"🧠 Intelligent detection: {brand_key} → {country} (confidence: {intelligent_result['confidence']:.2f}, source: {intelligent_result['source']})")
+            return country, city
+        
+        # 5. Fallback to basic title estimation
+        elif title_fallback:
             guessed_country = estimate_origin_country(title_fallback)
             guessed_city = origin_hubs.get(guessed_country, origin_hubs["UK"])["city"]
             brand_locations[brand_key] = {
@@ -420,10 +1485,10 @@ def resolve_brand_origin(brand_key, title_fallback=None):
                 "fulfillment": "UK"
             }
             save_brand_locations()
-            Log.success(f"📦 Learned origin from title: {brand_key} → {guessed_country}")
+            Log.success(f"📦 Basic estimation from title: {brand_key} → {guessed_country}")
             return guessed_country, guessed_city
 
-        # 5. Log unknown brand
+        # 6. Log unknown brand
         # Ensure unrecognized_brands.txt exists
         if not os.path.exists("unrecognized_brands.txt"):
             with open("unrecognized_brands.txt", "w", encoding="utf-8") as f:
@@ -621,7 +1686,7 @@ def is_invalid_brand(candidate):
 
 def scrape_amazon_titles(url, max_items=100, enrich=False):
     import undetected_chromedriver as uc
-    from common.data.brand_origin_resolver import get_brand_origin
+    from common.data.brand_origin_resolver import get_brand_origin, get_brand_origin_intelligent
 
     options = uc.ChromeOptions()
     options.add_argument("--no-sandbox")
@@ -908,28 +1973,52 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
         if brand_key not in brand_locations:
             enrich_brand_location(brand_name, amazon_url)
 
-        # === ORIGIN PRIORITY: page blob > brand DB > title fallback > shipping
+        # === ORIGIN PRIORITY: Structured page data > unstructured page > brand DB > defaults
         origin_country = "Unknown"
         origin_city = "Unknown"
         origin_source = "Unknown"
+        origin_confidence = "unknown"
 
-
-        # ✅ Only run fallback origin logic if still unknown
-        if origin_country in ["Unknown", "Other", None, ""]:
+        # STEP 1: Extract from structured Amazon sections FIRST (highest priority)
+        origin_data = extract_origin_from_structured_data(driver)
+        if origin_data["found"]:
+            origin_country = origin_data["country"]
+            origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
+            origin_source = "structured_page_data"
+            origin_confidence = "high"
+            print(f"🎯 HIGH CONFIDENCE origin from structured data: {origin_country}")
+        
+        # STEP 2: Only try unstructured extraction if no structured data found
+        elif origin_country in ["Unknown", "Other", None, ""]:
 
             # 1. Try to extract origin from page blobs
             for blob in text_blobs:
                 legacy_specs = []
                 if any(kw in blob for kw in ["country of origin", "made in", "manufacturer"]):
-                    match = re.search(r"(?:origin[:\s]*|made in[:\s]*|manufacturer(?:ed)? in[:\s]*)([a-zA-Z\s,]+)", blob)
-                    if match:
-                        raw_origin = match.group(1).strip()
-                        if raw_origin.lower() not in ["no", "not specified", "unknown"]:
-                            origin_country = fuzzy_normalize_origin(raw_origin)
-                            origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
-                            origin_source = "blob_match"
-                            print(f"📍 Extracted origin from blob: {raw_origin} → {origin_country}")
-                            break
+                    # Enhanced regex patterns for different Amazon formats
+                    origin_patterns = [
+                        r"country\s+of\s+origin[:\s]*([a-zA-Z\s,]+)",  # "Country of origin: Vietnam"
+                        r"origin[:\s]*([a-zA-Z\s,]+)",  # "Origin: Vietnam"
+                        r"made\s+in[:\s]*([a-zA-Z\s,]+)",  # "Made in Vietnam"
+                        r"manufacturer(?:ed)?\s+in[:\s]*([a-zA-Z\s,]+)",  # "Manufactured in Vietnam"
+                        r"product\s+of[:\s]*([a-zA-Z\s,]+)"  # "Product of Vietnam"
+                    ]
+                    
+                    for pattern in origin_patterns:
+                        match = re.search(pattern, blob, re.IGNORECASE)
+                        if match:
+                            raw_origin = match.group(1).strip()
+                            # Clean up common trailing words
+                            raw_origin = re.sub(r'\s+(and|or|the|other|countries|regions?).*$', '', raw_origin, flags=re.IGNORECASE)
+                            if raw_origin.lower() not in ["no", "not specified", "unknown", "", "n/a"]:
+                                origin_country = fuzzy_normalize_origin(raw_origin)
+                                origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
+                                origin_source = "blob_match"
+                                print(f"📍 Extracted origin from blob: '{raw_origin}' → {origin_country} (pattern: {pattern})")
+                                break
+                    
+                    if origin_country not in ["Unknown", "Other", None, ""]:
+                        break
 
             # 1.5 Check legacy tech specs
             if origin_country in ["Unknown", "Other", None, ""]:
@@ -949,24 +2038,55 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
             # 1.5.2 Extended blob fallback: broader keyword match
             if origin_country in ["Unknown", "Other", None, ""]:
                 for blob in text_blobs:
-                    if any(kw in blob for kw in ["country of origin", "made in", "product of", "manufactured in", "origin:"]):
-                        match = re.search(r"(?:made in|product of|manufactured in|origin[:\s]*)([a-zA-Z\s]+)", blob)
-                        if match:
-                            raw_origin = match.group(1).strip()
-                            if raw_origin and raw_origin.lower() not in ["unknown", "not specified"]:
-                                origin_country = fuzzy_normalize_origin(raw_origin)
-                                origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
-                                origin_source = "blob_fallback"
-                                print(f"🌍 Fuzzy extracted origin from blob: {raw_origin} → {origin_country}")
-                                break
+                    if any(kw in blob.lower() for kw in ["country of origin", "made in", "product of", "manufactured in", "origin:", "vietnam", "china", "germany", "usa"]):
+                        # Better patterns for different origin formats
+                        origin_patterns = [
+                            r"country\s+of\s+origin[:\s]*([a-zA-Z\s,]+)",
+                            r"made\s+in[:\s]*([a-zA-Z\s,]+)",
+                            r"product\s+of[:\s]*([a-zA-Z\s,]+)",
+                            r"manufactured\s+in[:\s]*([a-zA-Z\s,]+)",
+                            r"origin[:\s]*([a-zA-Z\s,]+)",
+                            # Direct country match when keywords like 'vietnam' appear
+                            r"\b(vietnam|china|germany|usa|japan|france|italy|uk|united kingdom|thailand|indonesia)\b"
+                        ]
+                        
+                        for pattern in origin_patterns:
+                            match = re.search(pattern, blob, re.IGNORECASE)
+                            if match:
+                                raw_origin = match.group(1).strip()
+                                # Clean up trailing words and punctuation
+                                raw_origin = re.sub(r'\s+(and|or|the|other|countries|regions?|etc).*$', '', raw_origin, flags=re.IGNORECASE)
+                                raw_origin = re.sub(r'[,;.].*$', '', raw_origin).strip()
+                                
+                                if raw_origin and raw_origin.lower() not in ["unknown", "not specified", "", "n/a", "other"]:
+                                    origin_country = fuzzy_normalize_origin(raw_origin)
+                                    origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
+                                    origin_source = "blob_fallback"
+                                    print(f"🌍 Extracted origin from extended blob: '{raw_origin}' → {origin_country} (pattern: {pattern})")
+                                    break
+                        if origin_country not in ["Unknown", "Other", None, ""]:
+                            break
 
 
             # 2. Fallback: brand DB, but only if page didn’t already give a specific origin
             if origin_country in ["Unknown", "Other", None, ""]:
-                db_origin_country, db_origin_city = resolve_brand_origin(brand_key, title)
-                origin_country = db_origin_country
-                origin_city = db_origin_city
-                origin_source = "brand_db"
+                print("⚠️ No page origin data found - using brand intelligence...")
+                brand_intel = get_brand_intelligent_origin(brand_key, title)
+                
+                if brand_intel["country"] != "Unknown":
+                    origin_country = brand_intel["country"]
+                    origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
+                    origin_source = "brand_intelligence"
+                    origin_confidence = brand_intel["confidence"]
+                    print(f"🧠 Brand intelligence: {brand_intel['reasoning']}")
+                else:
+                    # Final fallback to generic brand DB
+                    db_origin_country, db_origin_city = resolve_brand_origin(brand_key, title)
+                    origin_country = db_origin_country
+                    origin_city = db_origin_city
+                    origin_source = "brand_db_generic"
+                    origin_confidence = "low"
+                    print(f"📚 Generic brand fallback: {brand_key} → {origin_country}")
             else:
                 print(f"🛡️ Preserving explicit product origin: {origin_country} (source: {origin_source})")
 
@@ -994,7 +2114,17 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
                 origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
                 print(f"🛡️ Protected origin override — sticking with brand DB: {origin_country}")
 
-            print(f"🎯 Returning final origin: {origin_country} (source: {origin_source})")
+            # Apply intelligent validation before finalizing
+            validated_origin, validated_city, validated_source, validated_confidence = apply_validation_to_origin_detection(
+                origin_country, origin_source, brand_key, title
+            )
+            
+            origin_country = validated_origin
+            origin_city = validated_city 
+            origin_source = validated_source
+            origin_confidence = validated_confidence
+            
+            print(f"🎯 Final validated origin: {origin_country} (source: {origin_source}, confidence: {origin_confidence})")
 
             # 🛡️ Final override protection
             if asin in priority_products:
@@ -1006,8 +2136,46 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
             print(f"🌍 Skipping all fallbacks — origin already set to: {origin_country} (source: {origin_source})")
 
 
-        # Scrape materials, weight, dimensions
-        weight = dimensions = material = recyclability = None
+        # === STRUCTURED DATA EXTRACTION (HIGH PRIORITY) ===
+        # Extract weight with confidence tracking
+        weight_data = extract_weight_from_structured_data(driver)
+        if weight_data["found"]:
+            weight = weight_data["weight_kg"]
+            weight_confidence = "high"
+            weight_source = weight_data["method"]
+            print(f"⚖️ HIGH CONFIDENCE weight: {weight}kg (source: {weight_source})")
+        else:
+            weight = None
+            weight_confidence = "unknown"
+            weight_source = "none"
+        
+        # Extract materials with multi-material support
+        materials_data = extract_materials_from_structured_data(driver)
+        if materials_data["found"]:
+            all_materials = materials_data["materials"]
+            primary_material = materials_data["primary_material"]
+            material_confidence = "high" if any(m["confidence"] == "high" for m in all_materials) else "medium"
+            material_source = materials_data["method"]
+            
+            # Log all materials found
+            material_names = [m["name"] for m in all_materials]
+            print(f"🧬 {material_confidence.upper()} CONFIDENCE materials: {', '.join(material_names)} (primary: {primary_material})")
+            material_breakdown = [f"{m['name']} ({m['weight']:.1%})" for m in all_materials]
+            print(f"📊 Material breakdown: {material_breakdown}")
+            
+            material = primary_material  # For backwards compatibility
+        else:
+            all_materials = []
+            primary_material = None
+            material = None
+            material_confidence = "unknown"
+            material_source = "none"
+        
+        # Extract dimensions (keep existing logic for now)
+        dimensions = None
+        recyclability = None
+        recyclability_percentage = 30  # Default fallback
+        recyclability_desc = "Recyclability assessment pending"
         try:
             text_blobs = []
             legacy_specs = []
@@ -1159,12 +2327,7 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
                     "wood": "Low"
                 }
 
-                if not recyclability or recyclability == "Unknown":
-                    if material and material.lower() in material_recyclability_map:
-                        recyclability = material_recyclability_map[material.lower()]
-                        print(f"♻️ Estimated recyclability from material: {material} → {recyclability}")
-                    else:
-                        recyclability = "Unknown"
+                # Skip smart recyclability here - will be done after loop completes
 
 
 
@@ -1178,14 +2341,81 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
                     break
                 
                 
-            recyclability = extract_recyclability(text_blobs)
+            # === MATERIAL FALLBACK LOGIC ===
+            # Only try text-based material extraction if structured extraction failed
+            if not material:
+                print("⚠️ No material found in structured data - trying text blob extraction...")
+                for blob in text_blobs:
+                    if any(kw in blob for kw in ["material", "sole", "outer", "fabric"]):
+                        extracted_material = extract_material(blob)
+                        if extracted_material and extracted_material != "Unknown":
+                            material = extracted_material
+                            material_confidence = "medium"
+                            material_source = "text_blob_fallback"
+                            print(f"🧬 MEDIUM CONFIDENCE material from text: {material}")
+                            break
+            
+            # Don't guess materials - better to be honest about uncertainty
+            if not material:
+                material = "Unknown"
+                material_confidence = "unknown"
+                material_source = "none_found"
+                print(f"🧬 No material information found - setting as Unknown")
+
+            # === COMPOUND RECYCLABILITY CALCULATION ===
+            # Calculate recyclability based on all materials found (compound analysis)
+            if all_materials:
+                recyclability_level, recyclability_percentage, recyclability_desc = calculate_compound_recyclability(all_materials)
+                recyclability = recyclability_level
+                
+                # Adjust confidence based on material confidence
+                if material_confidence == "high":
+                    recyclability_confidence = "high"
+                elif material_confidence == "medium":
+                    recyclability_confidence = "medium"
+                else:
+                    recyclability_confidence = "low"
+                    
+                print(f"♻️ Compound recyclability analysis: {recyclability} ({recyclability_percentage}%) - {recyclability_desc} [confidence: {recyclability_confidence}]")
+            elif material and material != "Unknown":
+                # Fallback to single material calculation
+                recyclability_level, recyclability_percentage, recyclability_desc = calculate_smart_recyclability(material)
+                recyclability = recyclability_level
+                recyclability_confidence = "medium"
+                print(f"♻️ Single material recyclability: {material} → {recyclability} ({recyclability_percentage}%) - {recyclability_desc}")
+            else:
+                # No material data available
+                recyclability = "Unknown"
+                recyclability_percentage = 0
+                recyclability_desc = "Cannot assess recyclability without material identification"
+                recyclability_confidence = "unknown"
+                print(f"♻️ Cannot calculate recyclability - no material data available")
 
         except Exception as e:
             print("⚠️ Extraction error:", e)
 
+        # === INTELLIGENT FALLBACKS (only when structured extraction fails) ===
+        # Weight fallback: Only use generic fallback if NO weight found anywhere
         if not weight:
-            print("⚠️ Weight not found in specs, using fallback.")
-            weight = 1.0  # Only fallback if nothing extracted at all
+            print("⚠️ No weight found in structured data - trying text blob extraction...")
+            # Try old extraction method as fallback
+            for blob in text_blobs:
+                if any(kw in blob for kw in ["weight", "weighs", "item weight"]):
+                    extracted_weight = extract_weight(blob)
+                    if extracted_weight:
+                        weight = extracted_weight
+                        weight_confidence = "medium"
+                        weight_source = "text_blob_fallback"
+                        print(f"⚖️ MEDIUM CONFIDENCE weight from text: {weight}kg")
+                        break
+        
+        # Final weight fallback: Only use 1kg default if absolutely nothing found
+        if not weight:
+            print("⚠️ No weight found anywhere - using category-based fallback")
+            # TODO: Could implement category-specific defaults here
+            weight = 1.0
+            weight_confidence = "low"
+            weight_source = "generic_default"
 
         # ✅ Only use shipping panel if origin is still unknown
         if origin_country in ["Unknown", "Other", None, ""]:
@@ -1252,6 +2482,21 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
             origin_city = trusted.get("origin_city", origin_city)
             print(f"🔒 Final override from priority DB: {origin_country}")
             
+        # === DATA PROVENANCE SUMMARY ===
+        print("\n🔍 === EXTRACTION SUMMARY ===")
+        print(f"📍 Origin: {origin_country} (source: {origin_source}, confidence: {origin_confidence})")
+        print(f"⚖️ Weight: {weight}kg (source: {weight_source}, confidence: {weight_confidence})")  
+        
+        # Enhanced material summary
+        if all_materials and len(all_materials) > 1:
+            material_summary = f"Primary: {primary_material} | All: {', '.join([m['name'] for m in all_materials])}"
+            print(f"🧬 Materials: {material_summary} (source: {material_source}, confidence: {material_confidence})")
+        else:
+            print(f"🧬 Material: {material} (source: {material_source}, confidence: {material_confidence})")
+        
+        print(f"♻️ Recyclability: {recyclability} ({recyclability_percentage}%) - {recyclability_desc}")
+        print("================================\n")
+
         # Calculate distance here before assigning to product
         origin_hub = origin_hubs.get(origin_country, origin_hubs["UK"])
         distance_origin_to_uk = round(haversine(origin_hub["lat"], origin_hub["lon"], uk_hub["lat"], uk_hub["lon"]), 1)
@@ -1267,6 +2512,29 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
         
             
 
+        # === Calculate overall confidence based on data sources ===
+        confidence_scores = {
+            "high": 3,
+            "medium": 2, 
+            "low": 1,
+            "unknown": 0
+        }
+        
+        total_confidence = (
+            confidence_scores.get(origin_confidence, 0) +
+            confidence_scores.get(weight_confidence, 0) +
+            confidence_scores.get(material_confidence, 0)
+        ) / 3
+        
+        if total_confidence >= 2.5:
+            overall_confidence = "High"
+        elif total_confidence >= 1.5:
+            overall_confidence = "Medium"
+        elif total_confidence >= 0.5:
+            overall_confidence = "Low"
+        else:
+            overall_confidence = "Estimated"
+
         product = {
             "asin": asin,
             "title": title,
@@ -1277,16 +2545,29 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
             "estimated_weight_kg": round(weight * 1.05, 2),
             "raw_product_weight_kg": weight,
             "dimensions_cm": dimensions,
-            "material_type": material,
+            "material_type": material,  # Keep for backwards compatibility
             "co2_emissions": None,
             "recyclability": recyclability,
+            "recyclability_percentage": recyclability_percentage,
+            "recyclability_description": recyclability_desc,
             "transport_mode": transport_mode,
             "co2_emissions": co2_emissions,
-            "confidence": "High" if is_high_confidence({
-                "material_type": material,
-                "estimated_weight_kg": weight,
-                "origin_city": origin_city
-            }) else "Estimated"
+            "confidence": overall_confidence,
+            # === NEW: Enhanced material information ===
+            "materials": {
+                "primary_material": primary_material or material,
+                "all_materials": [{"name": m["name"], "weight": m["weight"]} for m in all_materials] if all_materials else [],
+                "material_count": len(all_materials) if all_materials else (1 if material != "Unknown" else 0)
+            },
+            # === NEW: Data provenance metadata ===
+            "data_sources": {
+                "origin_source": origin_source,
+                "origin_confidence": origin_confidence,
+                "weight_source": weight_source,
+                "weight_confidence": weight_confidence,
+                "material_source": material_source,
+                "material_confidence": material_confidence
+            }
         }
         
         
@@ -1435,5 +2716,66 @@ if __name__ == "__main__":
             print(f"📄 Saved structured training data to {csv_path}")
 
     save_products_to_json(list(unique_products), "bulk_scraped_products.json")
+
+
+def calculate_smart_recyclability(material, product_category=None):
+    """
+    Calculate recyclability score based on material type and product category.
+    Returns tuple of (recyclability_level, percentage, description)
+    """
+    if not material:
+        return "Unknown", 30, "Material type not specified"
+    
+    material = material.lower()
+    
+    # Material-based recyclability mapping (updated with realistic percentages)
+    recyclability_map = {
+        # High recyclability (70-90%)
+        "aluminum": ("High", 90, "Infinitely recyclable metal - most valuable recyclable"),
+        "steel": ("High", 85, "Highly recyclable metal with strong demand"),
+        "glass": ("High", 80, "Infinitely recyclable when sorted by color"),
+        "paper": ("High", 75, "Widely recyclable when clean and dry"),
+        "cardboard": ("High", 88, "Highly recyclable packaging material"),
+        
+        # Medium recyclability (40-70%)
+        "plastic": ("Medium", 55, "Recyclability varies by plastic type (1-7)"),
+        "polyethylene": ("Medium", 65, "PE plastic commonly recycled"),
+        "polypropylene": ("Medium", 60, "PP plastic recyclable in many programs"), 
+        "cotton": ("Medium", 50, "Recyclable through textile programs"),
+        "polyester": ("Medium", 45, "Can be recycled into new fibers"),
+        "mesh": ("Medium", 40, "Depends on material composition"),
+        "fabric": ("Medium", 35, "Textile recycling programs expanding"),
+        "canvas": ("Medium", 40, "Natural fiber canvas more recyclable"),
+        "synthetic": ("Medium", 30, "Synthetic materials harder to recycle"),
+        
+        # Low recyclability (10-40%)
+        "rubber": ("Low", 20, "Limited recycling - mainly downcycled to mats/mulch"),
+        "silicone": ("Low", 15, "Specialized recycling required - very limited"),
+        "nylon": ("Low", 25, "Chemical recycling emerging but limited"),
+        "leather": ("Low", 10, "Not traditionally recyclable - biodegradable"),
+        "foam": ("Low", 12, "Difficult to recycle - mainly energy recovery"),
+        
+        # Mixed/Unknown materials (medium-low)
+        "compound": ("Low", 25, "Mixed materials difficult to separate and recycle"),
+        "composite": ("Low", 15, "Multi-material composites very hard to recycle"),
+        "mixed": ("Medium", 30, "Depends on component separation feasibility"),
+        "textile": ("Medium", 35, "Growing textile recycling infrastructure"),
+        "unknown": ("Unknown", 20, "Cannot assess without material identification"),
+    }
+    
+    # Check for exact matches first
+    for mat_key, (level, percentage, desc) in recyclability_map.items():
+        if mat_key in material:
+            return level, percentage, desc
+    
+    # Default fallback based on common material types
+    if any(term in material for term in ["metal", "alumin", "steel"]):
+        return "High", 80, "Metal-based materials are typically recyclable"
+    elif any(term in material for term in ["plastic", "poly"]):
+        return "Medium", 50, "Plastic recyclability varies by type"
+    elif any(term in material for term in ["fabric", "textile", "cloth"]):
+        return "Medium", 40, "Textile recycling programs available"
+    else:
+        return "Unknown", 30, "Recyclability assessment requires more material details"
 
 

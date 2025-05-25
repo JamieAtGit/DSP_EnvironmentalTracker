@@ -7,7 +7,10 @@ import PredictPage from "./pages/PredictPage";
 import AdminPage from "./pages/AdminPage";
 import LogOnPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
-import ExtensionPage from "./pages/ExtensionPage"; // adjust path if needed
+import ExtensionPage from "./pages/ExtensionPage";
+import ContactPage from "./pages/ContactPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 
 
 export default function App() {
@@ -21,6 +24,9 @@ export default function App() {
         <Route path="/login" element={<LogOnPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/extension" element={<ExtensionPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
       </Routes>
     </Router>
   );

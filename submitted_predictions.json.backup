@@ -1,0 +1,388 @@
+[
+  {
+    "title": "TEST",
+    "raw_input": {
+      "material": "Plastic",
+      "weight": 1.0,
+      "transport": "Air",
+      "recyclability": "Low",
+      "origin": "China"
+    },
+    "predicted_label": "D",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "1-48 of over 30,000 results for",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Check each product page for other buying options. Price and other details may vary based on product size and colour.",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Panana Gaming Chair Heavy Duty Reclining Swivel Chair Ergonomic with Pillow and Lumbar Cushion (Black)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Ticova Ergonomic Office Chair - High Back Desk Chair with Adjustable Lumbar Support, Headrest & 3D Armrest - 130\u00b0Rocking Mesh Computer Chair",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Panana Office Chair Ergonomic Desk Chair with 90\u00b0-135\u00b0 Tilt Angle Gaming Chair PU Leather (Without Footrest, Brown)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "rattantree Office Chair, Mid Back Ergonomic with Flip-up Armrest, Computer Swivel Chair with Back Support, Adjustable Conference Executive Manager Chair for Home/Office Use",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Yaheetech Adjustable Office Swivel Chair Ergonomic Mesh Computer Chair Executive with Arms Height Adjustable Back Support for Home Office Black",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "naspaluro Office Chair Ergonomic Desk with 90\u00b0 Flip-up Armrest Lumbar Support, Height Adjustable Chair, Executive Swivel Computer Padded Seat Cushion for Home/Office",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Office Chair Ergonomic Desk Chair with 90\u00b0 Flip-up Armrest Lumbar Support, Height Adjustable Chair, Executive Swivel Computer Padded Seat Cushion for Home/Office",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Office Chair Ergonomic Desk Chair with 90\u00b0 Flip-up Armrest Lumbar Support, Height Adjustable Chair, Executive Swivel Computer Padded Seat Cushion for Home/Office",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Gaming Chair for Adults - Recliner Armchair with Massage Lumbar Support, Swivel, Ergonomic Gaming Chair with Footrest, Office Chair PU Leather Brown",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Gaming Chair for Adults - Recliner Armchair with Massage Lumbar Support, Swivel, Ergonomic Gaming Chair with Footrest, Office Chair PU Leather Brown",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Big and Tall Office Chair 400lbs, Large Heavy Duty High Back Executive Computer Office Desk Chair Flip-up Arms Wide Thick Seat for Home Office (Black)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Big and Tall Office Chair 400lbs, Large Heavy Duty High Back Executive Computer Office Desk Chair Flip-up Arms Wide Thick Seat for Home Office (Black)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Office Chair, Breathable Mesh Swivel Desk Chair, Lumbar Back Support Ergonomic Office Chair, Computer Chair Office Chairs with Flip-up Armrests, Black",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Office Chair, Breathable Mesh Swivel Desk Chair, Lumbar Back Support Ergonomic Office Chair, Computer Chair Office Chairs with Flip-up Armrests, Black",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Ergonomic Executive Office Chair, Thick and Wide Seat Cushion, Flip-up Armrests, Tilt Computer Desk Chair, Comfy Fabric for Home Office Business, Grey",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Ergonomic Executive Office Chair, Thick and Wide Seat Cushion, Flip-up Armrests, Tilt Computer Desk Chair, Comfy Fabric for Home Office Business, Grey",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "COSTWAY 300/330/400/500LBS Big & Tall Executive Office Chair, Height Adjustable Leather Computer Desk Chair with Rocking Backrest & Arms, Home Office Ergonomic Swivel Task Chair (400LBS, Black)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "COSTWAY 300/330/400/500LBS Big & Tall Executive Office Chair, Height Adjustable Leather Computer Desk Chair with Rocking Backrest & Arms, Home Office Ergonomic Swivel Task Chair (400LBS, Black)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "COSTWAY 300/330/400/500LBS Big & Tall Executive Office Chair, Height Adjustable Leather Computer Desk Chair with Rocking Backrest & Arms, Home Office Ergonomic Swivel Task Chair (400LBS, Black)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Folding Chairs Metal Frame Indoor Fold Up Chair Folding Desk Chairs Easy Folding and Storage Foldable Chairs for Office Home Extra Seat 2 Pack Black Chairs\u2026",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "YONISEE Office Chair - Ergonomic Desk Chair with Lumbar Support Headrest Adjustable, Padded Flip-up Armrests Comfy Seat Cushion High Back Executive Manager Chair For Home Office",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "YONISEE Office Chair - Ergonomic Desk Chair with Lumbar Support Headrest Adjustable, Padded Flip-up Armrests Comfy Seat Cushion High Back Executive Manager Chair For Home Office",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Ergonomic high-back gaming, computer, office, study, swivel, and racing-style chair with adjustable lumbar and headrest support, 150kg weight capacity, ideal for home office(Gray)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Ergonomic high-back gaming, computer, office, study, swivel, and racing-style chair with adjustable lumbar and headrest support, 150kg weight capacity, ideal for home office(Gray)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Yaheetech Reclining Chair Tan Leather Adjustable Armchair Modern Single Recliner Padded Seat Chair Upholstered PU Sofa for Living Room Bedroom and Theater",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Bliswood High Back Office Chair Ergonomic Comfortable Executive Desk Chair With Lumber Support Height Adjustable Seat For Home Office (Blue & Black)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Yaheetech Reclining Chair Tan Leather Adjustable Armchair Modern Single Recliner Padded Seat Chair Upholstered PU Sofa for Living Room Bedroom and Theater",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Bliswood High Back Office Chair Ergonomic Comfortable Executive Desk Chair With Lumber Support Height Adjustable Seat For Home Office (Blue & Black)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  },
+  {
+    "title": "Bliswood High Back Office Chair Ergonomic Comfortable Executive Desk Chair With Lumber Support Height Adjustable Seat For Home Office (Blue & Black)",
+    "raw_input": {
+      "material": "Other",
+      "weight": 0.5,
+      "transport": "Land",
+      "recyclability": "Medium",
+      "origin": "Other"
+    },
+    "predicted_label": "F",
+    "confidence": "100.0%"
+  }
+] "100.0%"
+  }
+]

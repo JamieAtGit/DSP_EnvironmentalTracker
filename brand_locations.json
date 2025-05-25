@@ -229,5 +229,96 @@
       "city": "Shanghai"
     },
     "fulfillment": "UK"
+  },
+  "free soul": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "huel": {
+    "origin": {
+      "country": "UK",
+      "city": "London"
+    },
+    "fulfillment": "UK"
+  },
+  "the bulk protein company": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "mitre": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "hisense": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "adidas": {
+    "origin": {
+      "country": "Germany",
+      "city": "Frankfurt"
+    },
+    "fulfillment": "UK"
+  },
+  "shot scope": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "ninja": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "brand: jack link's": {
+    "origin": {
+      "country": "Usa",
+      "city": "Unknown"
+    },
+    "fulfillment": "UK"
+  },
+  "bob snail roll": {
+    "origin": {
+      "country": "Uk",
+      "city": "Unknown"
+    },
+    "fulfillment": "UK"
+  },
+  "amazon renewed": {
+    "origin": {
+      "country": "USA",
+      "city": "San Francisco"
+    },
+    "fulfillment": "UK"
+  },
+  "brand: annex": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "lantana": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
   }
 }

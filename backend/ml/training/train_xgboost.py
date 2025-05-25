@@ -13,16 +13,20 @@ import json
 
 # === Paths ===
 script_dir = os.path.dirname(__file__)
-csv_path = os.path.abspath(os.path.join(script_dir, "../../../common/data/csv/eco_dataset.csv"))
+csv_path = os.path.abspath(os.path.join(script_dir, "../../../common/data/csv/enhanced_amazon_dataset.csv"))
 model_dir = os.path.join(script_dir, "..", "models")
 encoders_dir = os.path.join(script_dir, "..", "encoders")
 os.makedirs(model_dir, exist_ok=True)
 os.makedirs(encoders_dir, exist_ok=True)
 
-# === Load and preprocess dataset ===
-column_names = ["title", "material", "weight", "transport", "recyclability", "true_eco_score", "co2_emissions", "origin"]
-df = pd.read_csv(csv_path, header=None, names=column_names, quotechar='"')
-df = df[df["true_eco_score"].isin(["A+", "A", "B", "C", "D", "E", "F"])].dropna()
+# === Load and preprocess enhanced dataset ===
+df = pd.read_csv(csv_path)  # Load with headers
+print(f"📊 Loaded enhanced dataset with {len(df)} rows and {len(df.columns)} columns")
+print(f"📋 Columns: {list(df.columns)}")
+
+# Filter for valid eco scores and remove NaN
+df = df[df["true_eco_score"].isin(["A+", "A", "B", "C", "D", "E", "F"])].dropna(subset=["true_eco_score"])
+print(f"📊 After filtering: {len(df)} rows")
 
 # === Clean up string fields
 for col in ["material", "transport", "recyclability", "origin"]:
@@ -34,7 +38,7 @@ df.dropna(subset=["weight"], inplace=True)
 df["weight_log"] = np.log1p(df["weight"])
 df["weight_bin"] = pd.cut(df["weight"], bins=[0, 0.5, 2, 10, 100], labels=[0, 1, 2, 3])
 
-# === Label encoding
+# === Label encoding for original features
 encoders = {
     'material': LabelEncoder(),
     'transport': LabelEncoder(),
@@ -48,15 +52,43 @@ for key in encoders:
     col = key if key != "label" else "true_eco_score"
     df[f"{key}_encoded"] = encoders[key].fit_transform(df[col].astype(str))
 
-# === Feature selection
+# === Encode new categorical features if they exist
+if 'packaging_type' in df.columns:
+    encoders['packaging_type'] = LabelEncoder()
+    df['packaging_type_encoded'] = encoders['packaging_type'].fit_transform(df['packaging_type'].astype(str))
+
+if 'size_category' in df.columns:
+    encoders['size_category'] = LabelEncoder()
+    df['size_category_encoded'] = encoders['size_category'].fit_transform(df['size_category'].astype(str))
+
+if 'quality_level' in df.columns:
+    encoders['quality_level'] = LabelEncoder()
+    df['quality_level_encoded'] = encoders['quality_level'].fit_transform(df['quality_level'].astype(str))
+
+# === Enhanced feature selection
 feature_cols = [
     "material_encoded",
-    "transport_encoded",
+    "transport_encoded", 
     "recyclability_encoded",
     "origin_encoded",
     "weight_log",
     "weight_bin_encoded"
 ]
+
+# Add enhanced features if they exist
+if 'packaging_type_encoded' in df.columns:
+    feature_cols.append('packaging_type_encoded')
+if 'size_category_encoded' in df.columns:
+    feature_cols.append('size_category_encoded')
+if 'quality_level_encoded' in df.columns:
+    feature_cols.append('quality_level_encoded')
+if 'pack_size' in df.columns:
+    df['pack_size'] = pd.to_numeric(df['pack_size'], errors='coerce').fillna(1)
+    feature_cols.append('pack_size')
+if 'material_confidence' in df.columns:
+    feature_cols.append('material_confidence')
+
+print(f"🎯 Using {len(feature_cols)} features: {feature_cols}")
 X = df[feature_cols].astype(float)
 y = df["label_encoded"]
 
