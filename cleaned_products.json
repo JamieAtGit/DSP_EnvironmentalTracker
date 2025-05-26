@@ -1846,5 +1846,67 @@
       "material_source": "text_blob_match_low_priority",
       "material_confidence": "unknown"
     }
+  },
+  {
+    "asin": "B0C8T9Z2TL",
+    "title": "Yoolly Lightweight Foldable Backpack, Small Hiking Rucksack, Waterproof Packable Backpack for Men Women Kids, Durable Rucksack for Outdoor Sport Travelling Hiking Camping Biking Walking",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9196.1,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 0.16,
+    "raw_product_weight_kg": 0.15,
+    "dimensions_cm": "20 x 28 x 42 cm",
+    "material_type": "Fabric",
+    "co2_emissions": 0.3,
+    "recyclability": "Medium",
+    "recyclability_percentage": 35,
+    "recyclability_description": "Textile recycling programs expanding",
+    "transport_mode": "Ship",
+    "confidence": "Medium",
+    "materials": {
+      "primary_material": "Fabric",
+      "all_materials": [],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_override",
+      "origin_confidence": "medium",
+      "weight_source": "product_dimensions",
+      "weight_confidence": "high",
+      "material_source": "category_guess",
+      "material_confidence": "unknown"
+    }
+  },
+  {
+    "asin": "B07YJDR9PY",
+    "title": "Travel Backpack, 45L Hiking Backpacks Water Resistant Multi-functional Trekking Rucksack Travel Laptop Backpack Mens Fits 17.3 Inch Computer for Camping Climbing Cycling, Black",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9196.1,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 0.82,
+    "raw_product_weight_kg": 0.78,
+    "dimensions_cm": "21.84 x 33.78 x 51.82 cm",
+    "material_type": "Fabric",
+    "co2_emissions": 1.56,
+    "recyclability": "Medium",
+    "recyclability_percentage": 35,
+    "recyclability_description": "Textile recycling programs expanding",
+    "transport_mode": "Ship",
+    "confidence": "Low",
+    "materials": {
+      "primary_material": "Fabric",
+      "all_materials": [],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "product_dimensions",
+      "weight_confidence": "high",
+      "material_source": "category_guess",
+      "material_confidence": "unknown"
+    }
   }
 ]

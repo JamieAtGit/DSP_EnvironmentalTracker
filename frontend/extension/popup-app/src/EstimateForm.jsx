@@ -110,19 +110,19 @@ export default function EstimateForm() {
   const materialInsight = materialInsights[canonicalMaterial];
 
   return (
-    <div style={{ padding: "1rem" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
-        <button className="text-center" onClick={() => document.body.classList.toggle("dark-mode")}>
+    <div className="glass-container">
+      <div className="header-section">
+        <button className="btn-secondary theme-toggle" onClick={() => document.body.classList.toggle("dark-mode")}>
           🌃 Toggle Theme
         </button>
       </div>
 
-      <h2 className="text-center">Amazon Shipping <br /> Emissions Estimator</h2>
+      <h2 className="title-gradient">Amazon Shipping<br />Emissions Estimator</h2>
 
-      <div style={{ marginBottom: "15px" }}>
-        <label>
+      <div className="form-section">
+        <label className="input-label">
           Change Shipping Mode:
-          <select value={selectedMode} onChange={(e) => setSelectedMode(e.target.value)}>
+          <select className="input-field select-field" value={selectedMode} onChange={(e) => setSelectedMode(e.target.value)}>
             <option value="Ship">Ship 🚢</option>
             <option value="Air">Air ✈️</option>
             <option value="Truck">Truck 🚚</option>
@@ -130,19 +130,49 @@ export default function EstimateForm() {
         </label>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: "1rem" }}>
-        <input type="text" placeholder="Amazon product URL" value={url} onChange={(e) => setUrl(e.target.value)} />
-        <input type="text" placeholder="Enter your postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} />
-        <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value))} />
-        <label>
-          <input type="checkbox" checked={includePackaging} onChange={(e) => setIncludePackaging(e.target.checked)} />{" "}
+      <form onSubmit={handleSubmit} className="estimate-form">
+        <div className="input-group">
+          <input 
+            type="text" 
+            className="input-field" 
+            placeholder="Amazon product URL" 
+            value={url} 
+            onChange={(e) => setUrl(e.target.value)} 
+          />
+        </div>
+        <div className="input-group">
+          <input 
+            type="text" 
+            className="input-field" 
+            placeholder="Enter your postcode" 
+            value={postcode} 
+            onChange={(e) => setPostcode(e.target.value)} 
+          />
+        </div>
+        <div className="input-group">
+          <input 
+            type="number" 
+            className="input-field" 
+            min="1" 
+            value={quantity} 
+            onChange={(e) => setQuantity(parseInt(e.target.value))} 
+          />
+        </div>
+        <label className="checkbox-container">
+          <input 
+            type="checkbox" 
+            className="checkbox-field" 
+            checked={includePackaging} 
+            onChange={(e) => setIncludePackaging(e.target.checked)} 
+          />
+          <span className="checkmark"></span>
           Include packaging weight
           <div className="text-muted">(5% estimated extra weight for packaging)</div>
         </label>
-        <button type="submit" disabled={loading}>
+        <button type="submit" className={`btn-primary ${loading ? 'loading' : ''}`} disabled={loading}>
           {loading ? (
             <span>
-              <span className="spinner" style={{ marginRight: "6px" }}></span>
+              <span className="spinner"></span>
               Estimating...
             </span>
           ) : (
@@ -151,133 +181,133 @@ export default function EstimateForm() {
         </button>
       </form>
 
-      {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
+      {error && <div className="status-badge error">{error}</div>}
 
       {result && (
         <div className="result-card">
-          <div
-            className="text-center"
-            title={productTitle}
-            style={{
-              marginBottom: "8px",
-              fontWeight: "bold",
-              fontSize: "15px",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              maxWidth: "100%",
-              display: "block",
-            }}
-          >
-            <span role="img" aria-label="package" style={{ verticalAlign: "middle", marginRight: "4px" }}>
-              📦
-            </span>
+          <div className="product-title" title={productTitle}>
+            <span role="img" aria-label="package">📦</span>
             {productTitle}
           </div>
 
-          <div
-            style={{
-              fontSize: "14px",
-              background: "#fefefe",
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              padding: "1rem",
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>🔍 Raw & Parsed Values</h3>
-            <p>
-              <strong>Eco Score (ML):</strong> {attributes.eco_score_ml || "N/A"}
-            </p>
-            <p>
-              <strong>Eco Score (Rule-Based):</strong> {attributes.eco_score_rule_based || "N/A"}
-            </p>
-            <p>
-              <strong>Material Type:</strong>{" "}
-              <span title={materialInsight?.description || "No material insight available"}>
-                {canonicalMaterial.charAt(0).toUpperCase() + canonicalMaterial.slice(1)}
-                {guessedMaterial !== rawMaterial && " (guessed)"}
-              </span>
-            </p>
+          <div className="data-section">
+            <h3 className="section-title">🔍 Raw & Parsed Values</h3>
+            
+            <div className="metric-grid">
+              <div className="metric-item">
+                <span className="metric-label">Eco Score (ML):</span>
+                <span className="status-badge primary">{attributes.eco_score_ml || "N/A"}</span>
+              </div>
+              
+              <div className="metric-item">
+                <span className="metric-label">Eco Score (Rule-Based):</span>
+                <span className="status-badge secondary">{attributes.eco_score_rule_based || "N/A"}</span>
+              </div>
+              
+              <div className="metric-item">
+                <span className="metric-label">Material Type:</span>
+                <span className="status-badge info" title={materialInsight?.description || "No material insight available"}>
+                  {canonicalMaterial.charAt(0).toUpperCase() + canonicalMaterial.slice(1)}
+                  {guessedMaterial !== rawMaterial && " (guessed)"}
+                </span>
+              </div>
 
-            <p>
-              <strong>Selected Transport Mode:</strong>{" "}
-              {attributes.selected_transport_mode
-                ? `${attributes.selected_transport_mode} ${
-                    attributes.selected_transport_mode === "Air"
-                      ? "✈️"
-                      : attributes.selected_transport_mode === "Ship"
-                      ? "🚢"
-                      : attributes.selected_transport_mode === "Truck"
-                      ? "🚚"
-                      : ""
-                  }`
-                : "Auto"}
-            </p>
+              <div className="metric-item">
+                <span className="metric-label">Selected Transport Mode:</span>
+                <span className="status-badge success">
+                  {attributes.selected_transport_mode
+                    ? `${attributes.selected_transport_mode} ${
+                        attributes.selected_transport_mode === "Air"
+                          ? "✈️"
+                          : attributes.selected_transport_mode === "Ship"
+                          ? "🚢"
+                          : attributes.selected_transport_mode === "Truck"
+                          ? "🚚"
+                          : ""
+                      }`
+                    : "Auto"}
+                </span>
+              </div>
 
-            <p>
-              <strong>Default Based on Distance:</strong>{" "}
-              {attributes.default_transport_mode
-                ? `${attributes.default_transport_mode} ${
-                    attributes.default_transport_mode === "Air"
-                      ? "✈️"
-                      : attributes.default_transport_mode === "Ship"
-                      ? "🚢"
-                      : attributes.default_transport_mode === "Truck"
-                      ? "🚚"
-                      : ""
-                  }`
-                : "N/A"}
-            </p>
+              <div className="metric-item">
+                <span className="metric-label">Default Based on Distance:</span>
+                <span className="status-badge info">
+                  {attributes.default_transport_mode
+                    ? `${attributes.default_transport_mode} ${
+                        attributes.default_transport_mode === "Air"
+                          ? "✈️"
+                          : attributes.default_transport_mode === "Ship"
+                          ? "🚢"
+                          : attributes.default_transport_mode === "Truck"
+                          ? "🚚"
+                          : ""
+                      }`
+                    : "N/A"}
+                </span>
+              </div>
 
+              {attributes.selected_transport_mode &&
+                attributes.selected_transport_mode !== attributes.default_transport_mode && (
+                  <div className="metric-item full-width">
+                    <div className="status-badge warning">
+                      ⚠️ You overrode the suggested mode ({attributes.default_transport_mode}) with{" "}
+                      {attributes.selected_transport_mode}.
+                    </div>
+                  </div>
+              )}
 
-            {attributes.selected_transport_mode &&
-              attributes.selected_transport_mode !== attributes.default_transport_mode && (
-                <p style={{ color: "orange" }}>
-                  ⚠️ You overrode the suggested mode ({attributes.default_transport_mode}) with{" "}
-                  {attributes.selected_transport_mode}.
-                </p>
-            )}
+              <div className="metric-item">
+                <span className="metric-label">Weight (incl. packaging):</span>
+                <span className="status-badge primary">{attributes.weight_kg ?? "N/A"} kg</span>
+              </div>
+              
+              <div className="metric-item">
+                <span className="metric-label">Recyclability:</span>
+                <span className="status-badge success">{attributes.recyclability ?? "N/A"}</span>
+              </div>
+              
+              <div className="metric-item">
+                <span className="metric-label">Origin:</span>
+                <span className="status-badge info">{attributes.origin ?? "N/A"}</span>
+              </div>
+              
+              <div className="metric-item carbon-highlight">
+                <span className="metric-label">Carbon Emissions:</span>
+                <span className="status-badge carbon">{attributes.carbon_kg ?? "N/A"} kg CO₂</span>
+              </div>
+            </div>
 
-            <p>
-              <strong>Weight (incl. packaging):</strong> {attributes.weight_kg ?? "N/A"} kg
-            </p>
-            <p>
-              <strong>Recyclability</strong> {attributes.recyclability ?? "N/A"} 
-            </p>
-            <p>
-              <strong>Origin</strong> {attributes.origin ?? "N/A"} 
-            </p>
-            <p>
-              <strong>Carbon Emissions:</strong> {attributes.carbon_kg ?? "N/A"} kg CO₂
-            </p>
-
-            {/* ML vs DEFRA Comparison Chart */}
             <MLvsDefraChart result={result} />
 
             <div className="section-divider"></div>
-            <p>
-              <strong>Distance from Origin:</strong>{" "}
-              {Number.isFinite(parseFloat(attributes?.distance_from_origin_km))
-                ? `${parseFloat(attributes.distance_from_origin_km).toFixed(1)} km`
-                : "N/A"}
-            </p>
+            
+            <div className="metric-grid">
+              <div className="metric-item">
+                <span className="metric-label">Distance from Origin:</span>
+                <span className="status-badge secondary">
+                  {Number.isFinite(parseFloat(attributes?.distance_from_origin_km))
+                    ? `${parseFloat(attributes.distance_from_origin_km).toFixed(1)} km`
+                    : "N/A"}
+                </span>
+              </div>
 
-            <p>
-              <strong>Distance from UK Hub:</strong>{" "}
-              {Number.isFinite(parseFloat(attributes?.distance_from_uk_hub_km))
-                ? `${parseFloat(attributes.distance_from_uk_hub_km).toFixed(1)} km`
-                : "N/A"}
-            </p>
+              <div className="metric-item">
+                <span className="metric-label">Distance from UK Hub:</span>
+                <span className="status-badge secondary">
+                  {Number.isFinite(parseFloat(attributes?.distance_from_uk_hub_km))
+                    ? `${parseFloat(attributes.distance_from_uk_hub_km).toFixed(1)} km`
+                    : "N/A"}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="text-center" style={{ marginTop: "10px" }}>
-            <button onClick={() => setEquivalenceView((prev) => (prev + 1) % 3)}>
-              <span role="img" aria-label="rotate" style={{ verticalAlign: "middle", marginRight: "4px" }}>
-                🔁
-              </span>
+          <div className="equivalence-section">
+            <button className="btn-secondary rotate-btn" onClick={() => setEquivalenceView((prev) => (prev + 1) % 3)}>
+              <span role="img" aria-label="rotate">🔁</span>
               Show another comparison
             </button>
-            <div style={{ marginTop: "8px", fontStyle: "italic" }}>
+            <div className="equivalence-display">
               {equivalenceView === 0 && result.data?.attributes?.trees_to_offset && (
                 <span>≈ {result.data.attributes.trees_to_offset} trees to offset</span>
               )}

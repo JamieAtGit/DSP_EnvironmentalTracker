@@ -390,5 +390,32 @@
       "city": "Shanghai"
     },
     "fulfillment": "UK"
+  },
+  "brand: yoolly_premium_backpack": {
+    "origin": {
+      "country": "Vietnam",
+      "city": "Ho Chi Minh City"
+    },
+    "fulfillment": "UK",
+    "learned_from": "smart_context_detection",
+    "product_context": "premium_backpack",
+    "original_title": "Yoolly Lightweight Foldable Backpack, Small Hiking Rucksack, Waterproof Packable Backpack for Men Women Kids, Durable Rucksack for Outdoor Sport Travelling Hiking Camping Biking Walking",
+    "reasoning": "\ud83d\udc55 Casual/lifestyle products typically manufactured in cost-optimized locations (Vietnam/China)",
+    "confidence": "medium",
+    "learned_at": "2025-05-26T21:24:10.220313"
+  },
+  "brand: yoolly": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "besttravel": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
   }
 }

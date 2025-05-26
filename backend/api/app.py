@@ -43,12 +43,12 @@ app.secret_key = "super-secret-key"
 
 from flask_cors import CORS
 
-CORS(app, supports_credentials=True, origins=[
-    "http://localhost:5173",
-    "https://www.amazon.co.uk",
-    "https://www.amazon.com",
-    "chrome-extension://lohejhmgkkmcdhnomjcpgfbeoabjncmp"
-])
+CORS(app, 
+     supports_credentials=True, 
+     origins=["*"],  # Allow all origins for extension development
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization"]
+)
 
 
 
@@ -909,11 +909,17 @@ def map_score_to_grade(score):
         return "F"
 
 
-@app.route("/estimate_emissions", methods=["POST"])
+@app.route("/estimate_emissions", methods=["POST", "OPTIONS"])
 def estimate_emissions():
     print("🔔 Route hit: /estimate_emissions")
+    
+    # Handle preflight OPTIONS request
     if request.method == "OPTIONS":
-        return '', 201
+        response = jsonify({})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response
 
     data = request.get_json()
     if not data:
