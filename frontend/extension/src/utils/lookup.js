@@ -21,11 +21,16 @@ function guessMaterialFromCategory(title) {
   return null;
 }
 
-// ✅ Add this helper before enhanceTooltips()
+// ✅ Enhanced material insights loader
 window.loadMaterialInsights = async function () {
   try {
-    const res = await fetch(chrome.runtime.getURL('material_insights.json'));
-    return await res.json();
+    const getURL = typeof chrome !== "undefined" && chrome.runtime?.getURL
+      ? chrome.runtime.getURL
+      : (path) => path;
+    const res = await fetch(getURL('material_insights.json'));
+    const insights = await res.json();
+    console.log("📚 Material insights loaded:", Object.keys(insights).length, "materials");
+    return insights;
   } catch (e) {
     console.error("❌ Failed to load insights:", e);
     return {};
@@ -83,57 +88,92 @@ async function enhanceTooltips() {
 }
 
 window.ecoLookup = async function (title, materialHint) {
-  const getURL = typeof chrome !== "undefined" && chrome.runtime?.getURL
-    ? chrome.runtime.getURL
-    : (path) => path;
+  try {
+    // Use cached data if available
+    let data = window.materialInsights;
+    if (!data) {
+      const getURL = typeof chrome !== "undefined" && chrome.runtime?.getURL
+        ? chrome.runtime.getURL
+        : (path) => path;
 
-  const res = await fetch(getURL("material_insights.json"));
-  const data = await res.json();
-
-  // Normalize
-  title = (title || "").toLowerCase();
-  materialHint = (materialHint || "")
-    .replace(/[\u200E\u200F\u202A-\u202E]/g, "") // Strip hidden Unicode chars
-    .trim()
-    .toLowerCase();
-
-  console.log("🔍 Looking up title:", title);
-  if (materialHint) console.log("🧪 Material hint:", materialHint);
-
-  // Priority 1: Exact match from materialHint
-  for (const key in data) {
-    if (materialHint.includes(key)) {
-      console.log("✅ Matched from material hint:", key);
-      return { ...data[key], name: key };
+      const res = await fetch(getURL("material_insights.json"));
+      data = await res.json();
+      window.materialInsights = data; // Cache for future use
     }
-  }
 
-  // Priority 2: Fuzzy match from title
-  let bestMatch = null;
-  let confidence = 0;
+    // Normalize inputs
+    title = (title || "").toLowerCase();
+    materialHint = (materialHint || "")
+      .replace(/[\u200E\u200F\u202A-\u202E]/g, "") // Strip hidden Unicode chars
+      .trim()
+      .toLowerCase();
 
-  for (const key in data) {
-    const regex = new RegExp(`\\b${key}\\b`, "i");
-    if (regex.test(title)) {
-      const matchCount = title.split(key).length - 1;
-      if (matchCount > confidence) {
-        bestMatch = { ...data[key], name: key };
-        confidence = matchCount;
+    console.log("🔍 Looking up title:", title.substring(0, 50) + "...");
+    if (materialHint) console.log("🧪 Material hint:", materialHint);
+
+    // Priority 1: Exact match from materialHint
+    if (materialHint && materialHint !== "unknown") {
+      for (const key in data) {
+        if (materialHint.includes(key.toLowerCase()) || key.toLowerCase().includes(materialHint)) {
+          console.log("✅ Matched from material hint:", key);
+          return { ...data[key], name: key, confidence: 95 };
+        }
       }
     }
-  }
 
-  if (bestMatch) {
-    console.log("🔍 Fuzzy matched from title:", bestMatch);
-    return bestMatch;
-  }
+    // Priority 2: Enhanced fuzzy match from title
+    let bestMatch = null;
+    let highestConfidence = 0;
 
-  // Priority 3: Guess from category
-  const fallback = guessMaterialFromCategory(title);
-  if (fallback && data[fallback]) {
-    console.log("🔁 Using fallback category material:", fallback);
-    return { ...data[fallback], name: fallback };
-  }
+    for (const key in data) {
+      const keyLower = key.toLowerCase();
+      
+      // Check for exact word boundary matches first
+      const exactRegex = new RegExp(`\\b${keyLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, "i");
+      if (exactRegex.test(title)) {
+        const confidence = 90 + (keyLower.length / title.length) * 10; // Longer matches get higher confidence
+        if (confidence > highestConfidence) {
+          bestMatch = { ...data[key], name: key, confidence: Math.min(confidence, 100) };
+          highestConfidence = confidence;
+        }
+      }
+      
+      // Then check for partial matches
+      else if (title.includes(keyLower) && keyLower.length > 3) {
+        const confidence = 70 + (keyLower.length / title.length) * 20;
+        if (confidence > highestConfidence) {
+          bestMatch = { ...data[key], name: key, confidence: Math.min(confidence, 85) };
+          highestConfidence = confidence;
+        }
+      }
+    }
 
-  return null;
+    if (bestMatch && highestConfidence > 60) {
+      console.log("🔍 Fuzzy matched from title:", bestMatch.name, "confidence:", bestMatch.confidence);
+      return bestMatch;
+    }
+
+    // Priority 3: Enhanced category guessing
+    const fallback = guessMaterialFromCategory(title);
+    if (fallback && data[fallback]) {
+      console.log("🔁 Using fallback category material:", fallback);
+      return { ...data[fallback], name: fallback, confidence: 60 };
+    }
+
+    // Priority 4: Look for common material descriptors in title
+    const commonMaterials = ['plastic', 'metal', 'wood', 'steel', 'aluminum', 'glass', 'ceramic', 'rubber', 'leather', 'cotton', 'polyester'];
+    for (const material of commonMaterials) {
+      if (title.includes(material) && data[material]) {
+        console.log("🎯 Found common material in title:", material);
+        return { ...data[material], name: material, confidence: 50 };
+      }
+    }
+
+    console.log("❓ No material match found for:", title.substring(0, 30) + "...");
+    return null;
+    
+  } catch (error) {
+    console.error("❌ Error in ecoLookup:", error);
+    return null;
+  }
 };
