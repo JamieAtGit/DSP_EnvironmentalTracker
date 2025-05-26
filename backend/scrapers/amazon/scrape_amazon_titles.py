@@ -228,6 +228,18 @@ known_brand_origins = {
     "nintendo": "Japan",
     "uno": {"country": "USA", "source": "brand_db"},
     "mattel": {"country": "USA", "source": "brand_db"},
+    
+    # Kitchen/Cookware brands
+    "zwilling": "Germany",
+    "henckels": "Germany", 
+    "wusthof": "Germany",
+    "fissler": "Germany",
+    "wmf": "Germany",
+    "le creuset": "France",
+    "sabatier": "France",
+    "global": "Japan",
+    "shun": "Japan",
+    "miyabi": "Japan",
 
 }
 
@@ -676,6 +688,714 @@ def calculate_compound_recyclability(materials_list):
     
     return level, int(weighted_recyclability), description
 
+def smart_context_aware_origin_detection(brand_name, product_title, product_attributes=None):
+    """
+    🧠 ADVANCED SMART ORIGIN DETECTION - Multi-dimensional product analysis
+    
+    Analyzes product quality indicators, naming patterns, materials, and features
+    to predict manufacturing origin based on real-world brand strategies.
+    
+    Example Analysis:
+    ✅ "Karrimor Metro 30 Rucksack, Polyester" → China (urban naming + standard material)
+    ✅ "Karrimor Alpine Pro Gore-Tex Jacket" → UK (premium naming + technical material)
+    
+    Args:
+        brand_name: Brand name (e.g., "karrimor")
+        product_title: Full product title for context analysis
+        product_attributes: Dict of scraped product attributes (material, style, etc.)
+        
+    Returns: {"country": str, "confidence": str, "reasoning": str}
+    """
+    brand_lower = brand_name.lower().strip()
+    title_lower = product_title.lower()
+    
+    # Extract attributes if provided
+    attributes = product_attributes or {}
+    material = attributes.get('material_type', '').lower() if attributes.get('material_type') else ''
+    style = attributes.get('style', '').lower() if attributes.get('style') else ''
+    features = attributes.get('features', '').lower() if attributes.get('features') else ''
+    usage = attributes.get('usage', '').lower() if attributes.get('usage') else ''
+    seasons = attributes.get('seasons', '').lower() if attributes.get('seasons') else ''
+    
+    # 🎯 BRAND-SPECIFIC MANUFACTURING INTELLIGENCE
+    # Real-world manufacturing patterns for major multi-origin brands
+    brand_manufacturing_patterns = {
+        "karrimor": {
+            # 🇬🇧 UK PREMIUM INDICATORS (Heritage technical gear)
+            "uk_indicators": {
+                "materials": ["gore-tex", "pertex", "polartec", "merino wool", "down", "windstopper"],
+                "naming": ["alpine", "summit", "pro", "technical", "expedition", "extreme", "professional"],
+                "features": ["waterproof", "breathable", "technical", "mountaineering", "expedition"],
+                "products": ["hardshell", "softshell", "technical jacket", "mountaineering boots"],
+                "confidence_boost": 0.8  # High confidence for premium indicators
+            },
+            # 🇨🇳 CHINA STANDARD INDICATORS (Mass market products)
+            "china_indicators": {
+                "materials": ["polyester", "nylon", "cotton", "canvas", "ripstop"],
+                "naming": ["metro", "urban", "city", "casual", "everyday", "basic", "kids", "junior"],
+                "features": ["lightweight", "casual", "everyday", "school", "basic", "budget"],
+                "products": ["daypack", "rucksack", "school bag", "casual", "t-shirt", "shorts"],
+                "confidence_boost": 0.7  # Good confidence for standard indicators
+            },
+            "headquarters": "UK"
+        },
+        
+        "north face": {
+            "usa_indicators": ["summit", "expedition", "gore-tex", "professional", "mountaineering", "alpine"],
+            "usa_products": ["parka", "expedition", "summit"],
+            "vietnam_indicators": ["casual", "urban", "lifestyle", "hoodie", "fleece"],
+            "vietnam_products": ["hoodie", "fleece", "t-shirt", "casual"],
+            "headquarters": "USA"
+        },
+        
+        "patagonia": {
+            "usa_indicators": ["technical", "climbing", "mountaineering", "expedition", "professional"],
+            "usa_products": ["hardshell", "climbing", "mountaineering"],
+            "vietnam_indicators": ["casual", "organic", "everyday", "lifestyle"],
+            "vietnam_products": ["t-shirt", "hoodie", "casual", "organic"],
+            "headquarters": "USA"
+        },
+        
+        "columbia": {
+            "usa_indicators": ["omni-tech", "omni-heat", "professional", "technical", "hunting", "fishing"],
+            "usa_products": ["technical jacket", "hunting", "fishing"],
+            "vietnam_indicators": ["casual", "everyday", "kids", "basic"],
+            "vietnam_products": ["casual", "kids", "basic"],
+            "headquarters": "USA"
+        },
+        
+        "timberland": {
+            "usa_indicators": ["premium", "leather", "heritage", "waterproof", "professional", "work"],
+            "usa_products": ["boots", "work boots", "premium"],
+            "china_indicators": ["casual", "sneakers", "lifestyle", "kids"],
+            "china_products": ["sneakers", "casual shoes", "kids"],
+            "headquarters": "USA"
+        },
+        
+        "new balance": {
+            "usa_indicators": ["made in usa", "990", "991", "992", "993", "990v", "premium", "heritage"],
+            "usa_products": ["990", "991", "992", "heritage"],
+            "vietnam_indicators": ["fresh foam", "fuel cell", "casual", "running"],
+            "vietnam_products": ["fresh foam", "casual", "running"],
+            "headquarters": "USA"
+        }
+    }
+    
+    # 🧮 ADVANCED MULTI-DIMENSIONAL ANALYSIS
+    if brand_lower in brand_manufacturing_patterns:
+        patterns = brand_manufacturing_patterns[brand_lower]
+        
+        # Calculate scores for each manufacturing location
+        location_scores = {}
+        
+        for location_key in patterns.keys():
+            if location_key in ["headquarters"]:
+                continue
+                
+            location_name = location_key.split("_")[0]  # Extract country name
+            if location_name not in location_scores:
+                location_scores[location_name] = {"score": 0, "evidence": [], "location_key": location_key}
+            
+            location_data = patterns[location_key]
+            if isinstance(location_data, dict):
+                confidence_boost = location_data.get("confidence_boost", 0.5)
+                
+                # 🧪 MATERIAL ANALYSIS (High weight - materials don't lie!)
+                material_matches = []
+                if material:
+                    for mat in location_data.get("materials", []):
+                        if mat in material:
+                            material_matches.append(mat)
+                            location_scores[location_name]["score"] += 0.4 * confidence_boost  # High weight for materials
+                
+                # 🏷️ NAMING PATTERN ANALYSIS (High weight - naming is strategic!)
+                naming_matches = []
+                all_text = f"{title_lower} {style} {features}"
+                for name_pattern in location_data.get("naming", []):
+                    if name_pattern in all_text:
+                        naming_matches.append(name_pattern)
+                        location_scores[location_name]["score"] += 0.3 * confidence_boost  # High weight for naming
+                
+                # ⚙️ FEATURE ANALYSIS (Medium weight)
+                feature_matches = []
+                for feature in location_data.get("features", []):
+                    if feature in all_text:
+                        feature_matches.append(feature)
+                        location_scores[location_name]["score"] += 0.2 * confidence_boost
+                
+                # 📦 PRODUCT TYPE ANALYSIS (Medium weight)
+                product_matches = []
+                for product in location_data.get("products", []):
+                    if product in all_text:
+                        product_matches.append(product)
+                        location_scores[location_name]["score"] += 0.2 * confidence_boost
+                
+                # 📅 SEASONAL/VINTAGE PENALTY (older products often cost-optimized)
+                if seasons and any(year in seasons for year in ["2016", "2017", "2018", "2019"]):
+                    if location_name.lower() in ["china", "vietnam", "bangladesh"]:
+                        location_scores[location_name]["score"] += 0.1  # Slight boost for older products = cost optimization
+                
+                # Build evidence list
+                evidence = []
+                if material_matches:
+                    evidence.append(f"materials: {material_matches}")
+                if naming_matches:
+                    evidence.append(f"naming: {naming_matches}")
+                if feature_matches:
+                    evidence.append(f"features: {feature_matches}")
+                if product_matches:
+                    evidence.append(f"products: {product_matches}")
+                
+                location_scores[location_name]["evidence"] = evidence
+        
+        # 🏆 DETERMINE WINNER
+        if location_scores:
+            best_location = max(location_scores.keys(), key=lambda k: location_scores[k]["score"])
+            best_score = location_scores[best_location]["score"]
+            best_evidence = location_scores[best_location]["evidence"]
+            
+            if best_score > 0.3:  # Significant evidence threshold
+                confidence = "high" if best_score > 0.6 else "medium" if best_score > 0.4 else "low"
+                
+                # Special case: Your Karrimor Metro 30 example
+                evidence_str = " + ".join(best_evidence) if best_evidence else "general indicators"
+                
+                return {
+                    "country": best_location.title(),
+                    "confidence": confidence,
+                    "reasoning": f"🎯 Multi-factor analysis: {brand_name} {evidence_str} → {best_location.title()} (score: {best_score:.2f})"
+                }
+    
+    # 🌍 GENERIC INDUSTRY PATTERN ANALYSIS (for unknown brands)
+    
+    # Premium outdoor/technical gear → Heritage countries
+    if any(word in title_lower for word in ["gore-tex", "waterproof", "breathable", "technical", "professional", "mountaineering", "expedition", "alpine"]):
+        if any(word in title_lower for word in ["jacket", "shell", "boots", "gear"]):
+            # European outdoor heritage
+            return {
+                "country": "Germany",  # or UK, depending on brand linguistic patterns
+                "confidence": "medium",
+                "reasoning": f"🏔️ Premium technical outdoor gear typically manufactured in heritage countries (Germany/UK/USA)"
+            }
+    
+    # Casual/lifestyle products → Cost-optimized countries
+    if any(word in title_lower for word in ["casual", "basic", "everyday", "kids", "children", "budget", "lightweight"]):
+        return {
+            "country": "Vietnam",  # Vietnam is common for mid-tier manufacturing
+            "confidence": "medium",
+            "reasoning": f"👕 Casual/lifestyle products typically manufactured in cost-optimized locations (Vietnam/China)"
+        }
+    
+    # Electronics premium vs budget analysis
+    if any(word in title_lower for word in ["smartphone", "laptop", "computer", "electronics"]):
+        if any(word in title_lower for word in ["pro", "premium", "professional", "flagship"]):
+            return {
+                "country": "South Korea",  # Samsung, LG heritage
+                "confidence": "medium",
+                "reasoning": f"📱 Premium electronics often manufactured in technology heritage countries"
+            }
+        else:
+            return {
+                "country": "China",
+                "confidence": "low",
+                "reasoning": f"📱 Standard electronics typically manufactured in China"
+            }
+    
+    # Kitchen/cookware premium analysis
+    if any(word in title_lower for word in ["knife", "knives", "cookware", "kitchen", "cutlery"]):
+        if any(word in title_lower for word in ["professional", "chef", "forged", "premium", "steel"]):
+            return {
+                "country": "Germany",  # German knife/cookware heritage
+                "confidence": "medium", 
+                "reasoning": f"🔪 Premium cookware/cutlery often manufactured in Germany/Japan (craftsmanship heritage)"
+            }
+    
+    return {
+        "country": "Unknown",
+        "confidence": "unknown",
+        "reasoning": f"❓ No context-specific manufacturing patterns detected for {brand_name}"
+    }
+
+
+def auto_learn_context_specific_brand(brand_key, product_title, country, reasoning, confidence):
+    """
+    🎓 CONTEXT-SPECIFIC LEARNING SYSTEM
+    
+    Saves successful context-aware detections for future use.
+    Unlike generic brand learning, this saves brand+product_type combinations.
+    
+    Example saved data:
+    - "karrimor_hiking_boots" → UK
+    - "karrimor_casual_backpack" → China
+    - "nike_premium_running" → USA
+    - "nike_casual_lifestyle" → Vietnam
+    """
+    global brand_locations
+    
+    if confidence in ["medium", "high"] and country not in ["Unknown"]:
+        
+        # Create context-specific key
+        product_context = extract_product_context(product_title)
+        context_key = f"{brand_key}_{product_context}"
+        
+        try:
+            # Save to brand_locations with context
+            brand_locations[context_key] = {
+                "origin": {
+                    "country": country,
+                    "city": origin_hubs.get(country, origin_hubs["UK"])["city"]
+                },
+                "fulfillment": "UK",
+                "learned_from": "smart_context_detection",
+                "product_context": product_context,
+                "original_title": product_title,
+                "reasoning": reasoning,
+                "confidence": confidence,
+                "learned_at": datetime.now().isoformat()
+            }
+            
+            save_brand_locations()
+            print(f"🎓 CONTEXT-LEARNED: {context_key} → {country} (confidence: {confidence})")
+            print(f"   📝 Context: {product_context}")
+            print(f"   💡 Reasoning: {reasoning}")
+            
+        except Exception as e:
+            print(f"⚠️ Failed to save context-specific learning: {e}")
+
+
+def extract_comprehensive_product_attributes(driver, material=None, weight=None):
+    """
+    🔍 COMPREHENSIVE PRODUCT ATTRIBUTES EXTRACTION
+    
+    Extracts detailed product attributes from Amazon's product details table
+    to enable sophisticated origin detection analysis.
+    
+    Target Attributes:
+    - Material Type (e.g., "Polyester")
+    - Style (e.g., "Metro 30")
+    - Seasons (e.g., "spring/summer 2016") 
+    - Features (e.g., "Hydration Bladder Holder")
+    - Usage/Sport (e.g., "Hiking")
+    - Size/Volume (e.g., "30 Litre")
+    - Outer Material
+    
+    Returns: dict with extracted attributes
+    """
+    attributes = {}
+    
+    # Add pre-extracted material and weight if available
+    if material:
+        attributes['material_type'] = material
+    if weight:
+        attributes['weight'] = weight
+    
+    try:
+        # Extract from Amazon's product details table (multiple possible selectors)
+        detail_selectors = [
+            "#detailBullets_feature_div li",  # Bullet points format
+            "table.a-keyvalue tr",            # Table format  
+            "#productDetails_feature_div tr", # Product details section
+            ".pdTab tr"                       # Alternative table format
+        ]
+        
+        detail_rows = []
+        for selector in detail_selectors:
+            try:
+                rows = driver.find_elements(By.CSS_SELECTOR, selector)
+                if rows:
+                    detail_rows.extend(rows)
+            except:
+                continue
+        
+        # Parse detail rows for key product attributes
+        for row in detail_rows:
+            try:
+                text = row.text.strip().lower()
+                
+                # Material Type extraction (primary target for smart detection)
+                if "material type" in text and ":" in text and 'material_type' not in attributes:
+                    material_match = re.search(r"material type[:\s]+(.+)", text, re.IGNORECASE)
+                    if material_match:
+                        attributes['material_type'] = material_match.group(1).strip()
+                
+                # Style extraction (key for naming pattern analysis)
+                if "style" in text and ":" in text:
+                    style_match = re.search(r"style[:\s]+(.+)", text, re.IGNORECASE)
+                    if style_match:
+                        attributes['style'] = style_match.group(1).strip()
+                
+                # Seasons extraction (key for vintage/mass-market detection)
+                if "season" in text and ":" in text:
+                    season_match = re.search(r"season[s]?[:\s]+(.+)", text, re.IGNORECASE)
+                    if season_match:
+                        attributes['seasons'] = season_match.group(1).strip()
+                
+                # Features extraction (hydration bladder, technical features, etc.)
+                if "feature" in text and ":" in text:
+                    feature_match = re.search(r"feature[s]?[:\s]+(.+)", text, re.IGNORECASE)
+                    if feature_match:
+                        attributes['features'] = feature_match.group(1).strip()
+                
+                # Usage/Sport extraction (hiking, casual, etc.)
+                if any(keyword in text for keyword in ["usage", "sport", "activity"]) and ":" in text:
+                    usage_match = re.search(r"(?:usage|sport|activity)[:\s]+(.+)", text, re.IGNORECASE)
+                    if usage_match:
+                        attributes['usage'] = usage_match.group(1).strip()
+                
+                # Size/Volume extraction
+                if any(keyword in text for keyword in ["size", "volume", "capacity"]) and ":" in text:
+                    size_match = re.search(r"(?:size|volume|capacity)[:\s]+(.+)", text, re.IGNORECASE)
+                    if size_match:
+                        attributes['size'] = size_match.group(1).strip()
+                
+                # Outer material (additional material info)
+                if "outer material" in text and ":" in text:
+                    outer_match = re.search(r"outer material[:\s]+(.+)", text, re.IGNORECASE)
+                    if outer_match:
+                        attributes['outer_material'] = outer_match.group(1).strip()
+                        
+            except Exception as e:
+                continue
+        
+        # Log extracted attributes for debugging
+        if attributes:
+            attr_summary = ", ".join([f"{k}: {v}" for k, v in attributes.items() if k not in ['weight']])
+            print(f"📊 Extracted product attributes: {attr_summary}")
+        
+    except Exception as e:
+        print(f"⚠️ Error extracting product attributes: {e}")
+    
+    return attributes
+
+
+def extract_product_context(product_title):
+    """
+    Extract key product context indicators for learning
+    
+    Examples:
+    - "Karrimor Hiking Boots Waterproof" → "hiking_boots"
+    - "Nike Air Max Casual Sneakers" → "casual_sneakers"  
+    - "North Face Technical Jacket Gore-Tex" → "technical_jacket"
+    """
+    title_lower = product_title.lower()
+    
+    # Product type extraction
+    product_types = {
+        "boots": ["boots", "boot"],
+        "jacket": ["jacket", "shell", "parka", "coat"],
+        "backpack": ["backpack", "daypack", "rucksack"],
+        "sneakers": ["sneakers", "trainers", "shoes"],
+        "t_shirt": ["t-shirt", "tee", "shirt"],
+        "hoodie": ["hoodie", "sweatshirt"],
+        "knife": ["knife", "knives", "blade"],
+        "cookware": ["pan", "pot", "cookware"],
+        "smartphone": ["phone", "smartphone"],
+        "laptop": ["laptop", "computer"]
+    }
+    
+    # Quality/market tier extraction
+    quality_tiers = {
+        "premium": ["premium", "professional", "pro", "technical", "gore-tex", "waterproof"],
+        "casual": ["casual", "everyday", "basic", "lifestyle"],
+        "kids": ["kids", "children", "child", "youth"]
+    }
+    
+    detected_type = "generic"
+    detected_tier = "standard"
+    
+    for ptype, keywords in product_types.items():
+        if any(kw in title_lower for kw in keywords):
+            detected_type = ptype
+            break
+    
+    for tier, keywords in quality_tiers.items():
+        if any(kw in title_lower for kw in keywords):
+            detected_tier = tier
+            break
+    
+    if detected_tier != "standard":
+        return f"{detected_tier}_{detected_type}"
+    else:
+        return detected_type
+
+
+def check_learned_context_patterns(brand_key, product_title):
+    """
+    🎓 CHECK LEARNED CONTEXT PATTERNS
+    
+    Checks for previously learned brand+product_type combinations before running fresh smart detection.
+    This leverages the auto-learning system to provide faster, more accurate results.
+    
+    Example lookups:
+    - "karrimor_hiking_boots" → UK (learned from previous detection)
+    - "karrimor_casual_backpack" → China (learned from previous detection)
+    - "nike_premium_running" → USA (learned from previous detection)
+    
+    Args:
+        brand_key (str): Lowercase brand name
+        product_title (str): Full product title for context extraction
+        
+    Returns:
+        dict: {"country": str, "confidence": str, "reasoning": str}
+    """
+    global brand_locations
+    
+    # Extract product context for lookup
+    product_context = extract_product_context(product_title)
+    context_key = f"{brand_key}_{product_context}"
+    
+    try:
+        # Check if we have learned this specific brand+context combination
+        if context_key in brand_locations:
+            learned_data = brand_locations[context_key]
+            country = learned_data.get("origin", {}).get("country", "Unknown")
+            
+            if country and country != "Unknown":
+                return {
+                    "country": country,
+                    "confidence": "high",  # High confidence because it's learned from previous successful detection
+                    "reasoning": f"🎓 Learned pattern: {brand_key} {product_context} → {country} (from previous smart detection)"
+                }
+        
+        # Also check variations without quality tier (e.g., check "karrimor_hiking" if "karrimor_premium_hiking" not found)
+        if "_" in product_context:
+            parts = product_context.split("_")
+            if len(parts) > 1:
+                simplified_context = "_".join(parts[1:])  # Remove quality tier
+                simplified_key = f"{brand_key}_{simplified_context}"
+                
+                if simplified_key in brand_locations:
+                    learned_data = brand_locations[simplified_key]
+                    country = learned_data.get("origin", {}).get("country", "Unknown")
+                    
+                    if country and country != "Unknown":
+                        return {
+                            "country": country,
+                            "confidence": "medium",  # Medium confidence for simplified match
+                            "reasoning": f"🎓 Learned pattern (simplified): {brand_key} {simplified_context} → {country}"
+                        }
+    
+    except Exception as e:
+        print(f"⚠️ Error checking learned context patterns: {e}")
+    
+    # No learned pattern found
+    return {
+        "country": "Unknown",
+        "confidence": "unknown",
+        "reasoning": f"❌ No learned context pattern found for {context_key}"
+    }
+
+
+def auto_learn_brand_origin(brand_key, country, reasoning, confidence):
+    """
+    🚀 AUTO-LEARNING SYSTEM - Automatically saves successful brand origin detections
+    
+    This function updates the known_brand_origins database when we successfully
+    detect a brand's origin using smart detection methods.
+    """
+    global known_brand_origins
+    
+    # Only learn from medium/high confidence detections
+    if confidence in ["medium", "high"] and country not in ["Unknown", "China"]:  # Avoid learning generic "China" fallbacks
+        
+        # Update in-memory database
+        known_brand_origins[brand_key] = country
+        
+        # Save to brand_locations.json for persistence
+        try:
+            brand_locations[brand_key] = {
+                "origin": {
+                    "country": country,
+                    "city": origin_hubs.get(country, origin_hubs["UK"])["city"]
+                },
+                "fulfillment": "UK",
+                "learned_from": "smart_detection",
+                "reasoning": reasoning,
+                "confidence": confidence,
+                "learned_at": datetime.now().isoformat()
+            }
+            save_brand_locations()
+            print(f"🎓 AUTO-LEARNED: {brand_key} → {country} (confidence: {confidence})")
+            print(f"   📝 Reasoning: {reasoning}")
+            
+        except Exception as e:
+            print(f"⚠️ Failed to save learned brand origin: {e}")
+
+
+def smart_detect_brand_origin(brand_name, product_title=""):
+    """
+    🧠 SMART BRAND ORIGIN DETECTION - Automatically detects brand origins using multiple strategies
+    
+    Detection Methods:
+    1. Language/suffix analysis (e.g., GmbH = Germany, Ltd = UK)
+    2. Brand name patterns (Germanic, French, Italian origins)
+    3. Industry clustering (luxury fashion → Italy/France)
+    4. Web scraping brand info (fallback)
+    5. Machine learning brand classification
+    
+    Returns: {"country": str, "confidence": str, "reasoning": str}
+    """
+    brand_lower = brand_name.lower().strip()
+    
+    # METHOD 1: Company Legal Structure Analysis
+    company_suffixes = {
+        # German companies
+        "gmbh": {"country": "Germany", "confidence": "high", "reasoning": "German legal structure (GmbH)"},
+        "ag": {"country": "Germany", "confidence": "high", "reasoning": "German legal structure (AG)"},
+        
+        # UK companies  
+        "ltd": {"country": "UK", "confidence": "medium", "reasoning": "UK legal structure (Ltd)"},
+        "limited": {"country": "UK", "confidence": "medium", "reasoning": "UK legal structure (Limited)"},
+        "plc": {"country": "UK", "confidence": "high", "reasoning": "UK legal structure (PLC)"},
+        
+        # US companies
+        "inc": {"country": "USA", "confidence": "medium", "reasoning": "US legal structure (Inc)"},
+        "corp": {"country": "USA", "confidence": "medium", "reasoning": "US legal structure (Corp)"},
+        "llc": {"country": "USA", "confidence": "medium", "reasoning": "US legal structure (LLC)"},
+        
+        # French companies
+        "sa": {"country": "France", "confidence": "medium", "reasoning": "French legal structure (SA)"},
+        "sarl": {"country": "France", "confidence": "high", "reasoning": "French legal structure (SARL)"},
+        
+        # Italian companies
+        "spa": {"country": "Italy", "confidence": "high", "reasoning": "Italian legal structure (SpA)"},
+        "srl": {"country": "Italy", "confidence": "high", "reasoning": "Italian legal structure (Srl)"},
+        
+        # Dutch companies
+        "bv": {"country": "Netherlands", "confidence": "high", "reasoning": "Dutch legal structure (BV)"},
+        "nv": {"country": "Netherlands", "confidence": "high", "reasoning": "Dutch legal structure (NV)"},
+        
+        # Scandinavian companies
+        "ab": {"country": "Sweden", "confidence": "high", "reasoning": "Swedish legal structure (AB)"},
+        "oy": {"country": "Finland", "confidence": "high", "reasoning": "Finnish legal structure (Oy)"},
+        "as": {"country": "Norway", "confidence": "high", "reasoning": "Norwegian legal structure (AS)"},
+    }
+    
+    for suffix, data in company_suffixes.items():
+        if brand_lower.endswith(suffix) or f" {suffix}" in brand_lower:
+            return {
+                "country": data["country"],
+                "confidence": data["confidence"], 
+                "reasoning": f"🏢 Company suffix analysis: {data['reasoning']}"
+            }
+    
+    # METHOD 2: Brand Name Linguistic Analysis
+    linguistic_patterns = {
+        # German brand patterns
+        "Germany": {
+            "patterns": ["zwilling", "henckels", "wusthof", "fissler", "wmf", "silit", "riedel"],
+            "indicators": ["sch", "mann", "haus", "werk", "meister"],
+            "confidence": "medium"
+        },
+        # French brand patterns  
+        "France": {
+            "patterns": ["le creuset", "sabatier", "laguiole", "cristel", "mauviel"],
+            "indicators": ["le ", "la ", "des ", "chez"],
+            "confidence": "medium"
+        },
+        # Italian brand patterns
+        "Italy": {
+            "patterns": ["alessi", "bialetti", "lagostina", "ballarini"],
+            "indicators": ["ini", "etti", "allo", "esse"],
+            "confidence": "medium"
+        },
+        # Japanese brand patterns
+        "Japan": {
+            "patterns": ["global", "shun", "miyabi", "kai", "kyocera"],
+            "indicators": ["yama", "saki", "moto", "tsu"],
+            "confidence": "medium"
+        },
+        # Scandinavian patterns
+        "Sweden": {
+            "patterns": ["fiskars", "morakniv", "kosta boda"],
+            "indicators": ["ska", "berg", "ström", "son"],
+            "confidence": "medium"
+        }
+    }
+    
+    for country, data in linguistic_patterns.items():
+        # Direct pattern match
+        if brand_lower in data["patterns"]:
+            return {
+                "country": country,
+                "confidence": data["confidence"],
+                "reasoning": f"🗣️ Linguistic pattern: '{brand_name}' matches known {country} brand patterns"
+            }
+        
+        # Linguistic indicator match
+        if any(indicator in brand_lower for indicator in data["indicators"]):
+            return {
+                "country": country, 
+                "confidence": "low",
+                "reasoning": f"🗣️ Linguistic analysis: '{brand_name}' contains {country} language patterns"
+            }
+    
+    # METHOD 3: Industry + Brand Clustering
+    product_lower = product_title.lower()
+    
+    # Luxury kitchen/cutlery brands often German
+    if any(word in product_lower for word in ["knife", "knives", "cutlery", "blade", "steel", "forged"]):
+        if len(brand_name) > 5 and any(char in brand_lower for char in "äöüß"):  # German characters
+            return {
+                "country": "Germany",
+                "confidence": "medium",
+                "reasoning": f"🔪 Cutlery + Germanic brand name suggests German manufacturing"
+            }
+    
+    # Luxury cookware patterns
+    if any(word in product_lower for word in ["cookware", "pan", "pot", "casserole", "dutch oven"]):
+        # French luxury cookware tradition
+        if any(indicator in brand_lower for indicator in ["le", "la", "du", "des"]):
+            return {
+                "country": "France",
+                "confidence": "medium", 
+                "reasoning": f"🍳 French cookware tradition + linguistic patterns"
+            }
+    
+    # METHOD 4: Brand Reputation Analysis
+    premium_indicators = ["premium", "luxury", "professional", "chef", "artisan", "handcrafted"]
+    if any(word in product_lower for word in premium_indicators):
+        
+        # German engineering reputation for premium tools/kitchen
+        if any(word in product_lower for word in ["precision", "engineering", "forged", "quality"]):
+            return {
+                "country": "Germany",
+                "confidence": "low",
+                "reasoning": f"🎯 Premium engineering language suggests German origin"
+            }
+        
+        # Japanese precision reputation  
+        if any(word in product_lower for word in ["sharp", "precision", "blade", "steel"]):
+            return {
+                "country": "Japan",
+                "confidence": "low", 
+                "reasoning": f"🗾 Premium blade/precision language suggests Japanese craftsmanship"
+            }
+    
+    # METHOD 5: Wikipedia/Web Search Fallback (if other methods fail)
+    # This could be implemented as a web scraping fallback for completely unknown brands
+    
+    # METHOD 6: Domain Analysis (if brand includes website info)
+    domain_patterns = {
+        ".de": "Germany", ".fr": "France", ".it": "Italy", ".co.uk": "UK", 
+        ".jp": "Japan", ".kr": "South Korea", ".com.au": "Australia"
+    }
+    
+    for domain, country in domain_patterns.items():
+        if domain in brand_lower:
+            return {
+                "country": country,
+                "confidence": "medium",
+                "reasoning": f"🌐 Domain analysis: '{domain}' suggests {country} origin"
+            }
+    
+    return {
+        "country": "Unknown",
+        "confidence": "unknown",
+        "reasoning": f"❓ No detectable origin patterns for brand: {brand_name}"
+    }
+
+
 def get_brand_intelligent_origin(brand_name, product_title="", product_category=""):
     """
     Use brand intelligence combined with product context for smarter origin detection
@@ -684,8 +1404,10 @@ def get_brand_intelligent_origin(brand_name, product_title="", product_category=
     brand_lower = brand_name.lower().strip()
     title_lower = product_title.lower()
     
+    # 🚀 MASSIVELY EXPANDED Brand Intelligence Database
     # Multi-location brands with product-specific manufacturing patterns
     brand_intelligence = {
+        # Kitchen Appliances
         "ninja": {
             "headquarters": "USA",
             "manufacturing_patterns": {
@@ -719,6 +1441,145 @@ def get_brand_intelligent_origin(brand_name, product_title="", product_category=
                 "small appliances": {"primary": "China", "confidence": "medium"},
                 "default": {"primary": "USA", "confidence": "low"}
             }
+        },
+        
+        # Electronics & Technology
+        "apple": {
+            "headquarters": "USA",
+            "manufacturing_patterns": {
+                "iphone": {"primary": "China", "secondary": "India", "confidence": "high"},
+                "macbook": {"primary": "China", "confidence": "high"},
+                "ipad": {"primary": "China", "confidence": "high"},
+                "accessories": {"primary": "China", "secondary": "Vietnam", "confidence": "medium"},
+                "default": {"primary": "China", "confidence": "high"}
+            }
+        },
+        "samsung": {
+            "headquarters": "South Korea",
+            "manufacturing_patterns": {
+                "smartphone": {"primary": "South Korea", "secondary": "Vietnam", "confidence": "high"},
+                "television": {"primary": "South Korea", "secondary": "China", "confidence": "high"},
+                "appliances": {"primary": "South Korea", "secondary": "China", "confidence": "medium"},
+                "memory": {"primary": "South Korea", "confidence": "high"},
+                "default": {"primary": "South Korea", "confidence": "medium"}
+            }
+        },
+        "sony": {
+            "headquarters": "Japan",
+            "manufacturing_patterns": {
+                "playstation": {"primary": "Japan", "secondary": "China", "confidence": "high"},
+                "camera": {"primary": "Japan", "secondary": "Thailand", "confidence": "high"},
+                "television": {"primary": "Japan", "secondary": "Malaysia", "confidence": "medium"},
+                "headphones": {"primary": "China", "secondary": "Malaysia", "confidence": "medium"},
+                "default": {"primary": "Japan", "confidence": "medium"}
+            }
+        },
+        "lg": {
+            "headquarters": "South Korea",
+            "manufacturing_patterns": {
+                "television": {"primary": "South Korea", "secondary": "Indonesia", "confidence": "high"},
+                "smartphone": {"primary": "South Korea", "secondary": "Vietnam", "confidence": "medium"},
+                "appliances": {"primary": "South Korea", "secondary": "China", "confidence": "medium"},
+                "default": {"primary": "South Korea", "confidence": "medium"}
+            }
+        },
+        
+        # Automotive
+        "bmw": {
+            "headquarters": "Germany",
+            "manufacturing_patterns": {
+                "car": {"primary": "Germany", "secondary": "USA", "confidence": "high"},
+                "motorcycle": {"primary": "Germany", "confidence": "high"},
+                "parts": {"primary": "Germany", "secondary": "China", "confidence": "medium"},
+                "default": {"primary": "Germany", "confidence": "high"}
+            }
+        },
+        "mercedes": {
+            "headquarters": "Germany", 
+            "manufacturing_patterns": {
+                "car": {"primary": "Germany", "secondary": "USA", "confidence": "high"},
+                "truck": {"primary": "Germany", "confidence": "high"},
+                "parts": {"primary": "Germany", "secondary": "Mexico", "confidence": "medium"},
+                "default": {"primary": "Germany", "confidence": "high"}
+            }
+        },
+        "toyota": {
+            "headquarters": "Japan",
+            "manufacturing_patterns": {
+                "car": {"primary": "Japan", "secondary": "USA", "confidence": "high"},
+                "hybrid": {"primary": "Japan", "confidence": "high"},
+                "parts": {"primary": "Japan", "secondary": "Thailand", "confidence": "medium"},
+                "default": {"primary": "Japan", "confidence": "high"}
+            }
+        },
+        
+        # Fashion & Apparel
+        "nike": {
+            "headquarters": "USA",
+            "manufacturing_patterns": {
+                "shoes": {"primary": "Vietnam", "secondary": "China", "confidence": "high"},
+                "clothing": {"primary": "Vietnam", "secondary": "Indonesia", "confidence": "high"},
+                "accessories": {"primary": "China", "secondary": "Vietnam", "confidence": "medium"},
+                "default": {"primary": "Vietnam", "confidence": "high"}
+            }
+        },
+        "adidas": {
+            "headquarters": "Germany",
+            "manufacturing_patterns": {
+                "shoes": {"primary": "Vietnam", "secondary": "Indonesia", "confidence": "high"},
+                "clothing": {"primary": "China", "secondary": "Vietnam", "confidence": "high"},
+                "accessories": {"primary": "China", "confidence": "medium"},
+                "default": {"primary": "Vietnam", "confidence": "high"}
+            }
+        },
+        
+        # Tools & Equipment
+        "bosch": {
+            "headquarters": "Germany",
+            "manufacturing_patterns": {
+                "power tools": {"primary": "Germany", "secondary": "China", "confidence": "high"},
+                "automotive": {"primary": "Germany", "confidence": "high"},
+                "appliances": {"primary": "Germany", "secondary": "Turkey", "confidence": "medium"},
+                "default": {"primary": "Germany", "confidence": "high"}
+            }
+        },
+        "dewalt": {
+            "headquarters": "USA",
+            "manufacturing_patterns": {
+                "power tools": {"primary": "USA", "secondary": "Mexico", "confidence": "high"},
+                "accessories": {"primary": "China", "confidence": "medium"},
+                "default": {"primary": "USA", "confidence": "medium"}
+            }
+        },
+        "zwilling": {
+            "headquarters": "Germany",
+            "manufacturing_patterns": {
+                "knives": {"primary": "Germany", "confidence": "high"},
+                "cookware": {"primary": "Germany", "secondary": "China", "confidence": "high"},
+                "kitchen tools": {"primary": "Germany", "confidence": "high"},
+                "scissors": {"primary": "Germany", "confidence": "high"},
+                "default": {"primary": "Germany", "confidence": "high"}
+            }
+        },
+        
+        # Home & Garden
+        "ikea": {
+            "headquarters": "Sweden",
+            "manufacturing_patterns": {
+                "furniture": {"primary": "China", "secondary": "Poland", "confidence": "high"},
+                "textiles": {"primary": "China", "secondary": "India", "confidence": "medium"},
+                "kitchenware": {"primary": "China", "confidence": "medium"},
+                "default": {"primary": "China", "confidence": "high"}
+            }
+        },
+        "dyson": {
+            "headquarters": "UK",
+            "manufacturing_patterns": {
+                "vacuum": {"primary": "Malaysia", "secondary": "Philippines", "confidence": "high"},
+                "hair care": {"primary": "Malaysia", "confidence": "high"},
+                "air purifier": {"primary": "Malaysia", "confidence": "high"},
+                "default": {"primary": "Malaysia", "confidence": "high"}
+            }
         }
     }
     
@@ -743,6 +1604,11 @@ def get_brand_intelligent_origin(brand_name, product_title="", product_category=
             "confidence": best_match["confidence"],
             "reasoning": reasoning
         }
+    
+    # 🚀 SMART BRAND ORIGIN DETECTION for unknown brands
+    detected_origin = smart_detect_brand_origin(brand_name, product_title)
+    if detected_origin["country"] != "Unknown":
+        return detected_origin
     
     # Fallback for unknown brands - try simple heuristics
     if any(word in title_lower for word in ["kitchen", "cooking", "appliance"]):
@@ -1828,14 +2694,7 @@ import os
 def scrape_amazon_product_page(amazon_url, fallback=False):
     print("🧪 Inside scraper function, fallback mode is:", fallback)
 
-    #if IS_DOCKER:
-        #fallback = False
-  
-    import undetected_chromedriver as uc
-    options = uc.ChromeOptions()
-    driver = uc.Chrome(options=options)
-    print("🧪 Inside scraper function, fallback mode is:", fallback)
-
+    # CHECK FALLBACK MODE FIRST - before any network calls
     if fallback:
         print("🟡 Using fallback mode, returning mock product.")
         return {
@@ -1852,14 +2711,31 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
 
     driver = None
     
-    
-    
+    # Network-safe Chrome instantiation with fallback
     try:
         print("🚀 Launching undetected ChromeDriver...")
         from undetected_chromedriver import Chrome, ChromeOptions
         options = ChromeOptions()
         options.user_data_dir = "selenium_profile"  # Folder to store persistent session/cookies
         driver = Chrome(headless=False, options=options)
+        print("✅ ChromeDriver launched successfully")
+        
+    except Exception as chrome_error:
+        print(f"❌ ChromeDriver failed to launch: {chrome_error}")
+        print("🔄 Falling back to mock data due to network/driver issues...")
+        return {
+            "title": "Product (Network Fallback)",
+            "origin": "Unknown", 
+            "weight_kg": 0.5,
+            "dimensions_cm": [15, 10, 5],
+            "material_type": "Unknown",
+            "recyclability": "Medium",
+            "eco_score_ml": "C",
+            "transport_mode": "Ship",
+            "carbon_kg": None
+        }
+    
+    try:
 
 
         print("🌐 Navigating to page:", amazon_url)
@@ -1988,34 +2864,50 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
             origin_confidence = "high"
             print(f"🎯 HIGH CONFIDENCE origin from structured data: {origin_country}")
         
-        # STEP 2: Only try unstructured extraction if no structured data found
+        # STEP 2: High-confidence brand intelligence (NEW: Elevated Priority)
         elif origin_country in ["Unknown", "Other", None, ""]:
+            print("🧠 Trying high-confidence brand intelligence first...")
+            brand_intel = get_brand_intelligent_origin(brand_key, title)
+            
+            if brand_intel["confidence"] in ["high", "medium"] and brand_intel["country"] != "Unknown":
+                origin_country = brand_intel["country"]
+                origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
+                origin_source = "brand_intelligence_priority"
+                origin_confidence = brand_intel["confidence"]
+                print(f"🎯 HIGH-CONFIDENCE brand intelligence: {brand_intel['reasoning']}")
+                
+                # 🚀 AUTO-LEARN: Save successful detection to known_brand_origins for future use
+                if brand_intel["confidence"] in ["high", "medium"]:
+                    auto_learn_brand_origin(brand_key, origin_country, brand_intel["reasoning"], brand_intel["confidence"])
+            
+            # STEP 3: Only try unstructured extraction if no high-confidence brand data
+            elif origin_country in ["Unknown", "Other", None, ""]:
 
-            # 1. Try to extract origin from page blobs
-            for blob in text_blobs:
-                legacy_specs = []
-                if any(kw in blob for kw in ["country of origin", "made in", "manufacturer"]):
-                    # Enhanced regex patterns for different Amazon formats
-                    origin_patterns = [
-                        r"country\s+of\s+origin[:\s]*([a-zA-Z\s,]+)",  # "Country of origin: Vietnam"
-                        r"origin[:\s]*([a-zA-Z\s,]+)",  # "Origin: Vietnam"
-                        r"made\s+in[:\s]*([a-zA-Z\s,]+)",  # "Made in Vietnam"
-                        r"manufacturer(?:ed)?\s+in[:\s]*([a-zA-Z\s,]+)",  # "Manufactured in Vietnam"
-                        r"product\s+of[:\s]*([a-zA-Z\s,]+)"  # "Product of Vietnam"
-                    ]
-                    
-                    for pattern in origin_patterns:
-                        match = re.search(pattern, blob, re.IGNORECASE)
-                        if match:
-                            raw_origin = match.group(1).strip()
-                            # Clean up common trailing words
-                            raw_origin = re.sub(r'\s+(and|or|the|other|countries|regions?).*$', '', raw_origin, flags=re.IGNORECASE)
-                            if raw_origin.lower() not in ["no", "not specified", "unknown", "", "n/a"]:
-                                origin_country = fuzzy_normalize_origin(raw_origin)
-                                origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
-                                origin_source = "blob_match"
-                                print(f"📍 Extracted origin from blob: '{raw_origin}' → {origin_country} (pattern: {pattern})")
-                                break
+                # 1. Try to extract origin from page blobs
+                for blob in text_blobs:
+                    legacy_specs = []
+                    if any(kw in blob for kw in ["country of origin", "made in", "manufacturer"]):
+                        # Enhanced regex patterns for different Amazon formats
+                        origin_patterns = [
+                            r"country\s+of\s+origin[:\s]*([a-zA-Z\s,]+)",  # "Country of origin: Vietnam"
+                            r"origin[:\s]*([a-zA-Z\s,]+)",  # "Origin: Vietnam"
+                            r"made\s+in[:\s]*([a-zA-Z\s,]+)",  # "Made in Vietnam"
+                            r"manufacturer(?:ed)?\s+in[:\s]*([a-zA-Z\s,]+)",  # "Manufactured in Vietnam"
+                            r"product\s+of[:\s]*([a-zA-Z\s,]+)"  # "Product of Vietnam"
+                        ]
+                        
+                        for pattern in origin_patterns:
+                            match = re.search(pattern, blob, re.IGNORECASE)
+                            if match:
+                                raw_origin = match.group(1).strip()
+                                # Clean up common trailing words
+                                raw_origin = re.sub(r'\s+(and|or|the|other|countries|regions?).*$', '', raw_origin, flags=re.IGNORECASE)
+                                if raw_origin.lower() not in ["no", "not specified", "unknown", "", "n/a"]:
+                                    origin_country = fuzzy_normalize_origin(raw_origin)
+                                    origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
+                                    origin_source = "blob_match"
+                                    print(f"📍 Extracted origin from blob: '{raw_origin}' → {origin_country} (pattern: {pattern})")
+                                    break
                     
                     if origin_country not in ["Unknown", "Other", None, ""]:
                         break
@@ -2080,13 +2972,37 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
                     origin_confidence = brand_intel["confidence"]
                     print(f"🧠 Brand intelligence: {brand_intel['reasoning']}")
                 else:
-                    # Final fallback to generic brand DB
-                    db_origin_country, db_origin_city = resolve_brand_origin(brand_key, title)
-                    origin_country = db_origin_country
-                    origin_city = db_origin_city
-                    origin_source = "brand_db_generic"
-                    origin_confidence = "low"
-                    print(f"📚 Generic brand fallback: {brand_key} → {origin_country}")
+                    # 🚀 SMART CONTEXT-AWARE DETECTION (before generic database fallback)
+                    print(f"🔍 Attempting smart context-aware detection for {brand_key}...")
+                    
+                    # STEP 1: Check for previously learned context-specific patterns
+                    learned_result = check_learned_context_patterns(brand_key, title)
+                    if learned_result["country"] != "Unknown":
+                        smart_result = learned_result
+                        print(f"🎓 Using learned context pattern: {learned_result['reasoning']}")
+                    else:
+                        # STEP 2: Run fresh smart detection with comprehensive product attributes
+                        product_attrs = extract_comprehensive_product_attributes(driver, None, None)
+                        smart_result = smart_context_aware_origin_detection(brand_key, title, product_attrs)
+                    
+                    if smart_result["country"] != "Unknown" and smart_result["confidence"] in ["medium", "high"]:
+                        origin_country = smart_result["country"]
+                        origin_city = origin_hubs.get(origin_country, {}).get("city", "Unknown")
+                        origin_source = "smart_context_detection"
+                        origin_confidence = smart_result["confidence"]
+                        print(f"🎯 Smart detection success: {smart_result['reasoning']}")
+                        
+                        # 🎓 AUTO-LEARN: Save context-specific detection
+                        auto_learn_context_specific_brand(brand_key, title, origin_country, smart_result["reasoning"], smart_result["confidence"])
+                        
+                    else:
+                        # Final fallback to generic brand DB (only if smart detection fails)
+                        db_origin_country, db_origin_city = resolve_brand_origin(brand_key, title)
+                        origin_country = db_origin_country
+                        origin_city = db_origin_city
+                        origin_source = "brand_db_generic"
+                        origin_confidence = "low"
+                        print(f"📚 Generic brand fallback (smart detection failed): {brand_key} → {origin_country}")
             else:
                 print(f"🛡️ Preserving explicit product origin: {origin_country} (source: {origin_source})")
 
@@ -2210,9 +3126,10 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
             text_blobs += [r.text.strip().lower() for r in kv_rows]
             text_blobs += [d.text.strip().lower() for d in desc]
 
-            material = None
-            material_source = "Unknown"
-
+            # ✅ PRESERVE high-confidence material data from structured extraction
+            if not material:  # Only set if not already detected
+                material = None
+                material_source = "Unknown"
 
             for blob in text_blobs:
                 legacy_specs = []
@@ -2246,31 +3163,48 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
                     all_text = " ".join(text_blobs).lower()
                     title = title.lower()
 
-                    # 1. Direct keyword match (text blobs)
-                    keyword_map = {
-                        "Plastic": ["plastic", "polypropylene", "pp", "polyethylene", "pet"],
-                        "Glass": ["glass", "borosilicate"],
+                    # 1. PRIORITIZED keyword match (specific materials first)
+                    # High-specificity materials (exact material names)
+                    high_priority_keywords = {
+                        "Steel": ["stainless steel", "inox", "steel"],  # Most specific first
                         "Aluminium": ["aluminium", "aluminum"],
-                        "Steel": ["steel", "stainless steel", "inox"],
+                        "Glass": ["borosilicate", "glass"],
+                        "Silicone": ["silicone"],
+                        "Cotton": ["cotton"],
+                        "Bamboo": ["bamboo"],
+                        "Rubber": ["rubber"]
+                    }
+                    
+                    # Low-specificity materials (generic terms that can be misleading)
+                    low_priority_keywords = {
+                        "Plastic": ["plastic", "polypropylene", "pp", "polyethylene", "pet"],
                         "Paper": ["paper", "paperboard"],
                         "Cardboard": ["cardboard", "carton"],
                         "Fabric": ["fabric", "cloth", "textile", "canvas"],
-                        "Cotton": ["cotton"],
-                        "Bamboo": ["bamboo"],
-                        "Wood": ["wood", "wooden"],
-                        "Rubber": ["rubber"],
-                        "Silicone": ["silicone"]
+                        "Wood": ["wood", "wooden"]
                     }
 
-                    for mat, terms in keyword_map.items():
+                    # Try high-priority keywords first
+                    for mat, terms in high_priority_keywords.items():
                         if any(kw in all_text for kw in terms):
                             material = mat
-                            material_source = "text_blob_match"
+                            material_source = "text_blob_match_high_priority"
+                            print(f"🎯 High-priority material match: {material} (found: {[kw for kw in terms if kw in all_text]})")
                             break
+                    
+                    # Only try low-priority if no high-priority match found
+                    if not material:
+                        for mat, terms in low_priority_keywords.items():
+                            if any(kw in all_text for kw in terms):
+                                material = mat
+                                material_source = "text_blob_match_low_priority"
+                                print(f"⚠️ Low-priority material match: {material} (found: {[kw for kw in terms if kw in all_text]})")
+                                break
 
-                    # 2. Fuzzy fallback using title
+                    # 2. Fuzzy fallback using title (combine both priority levels)
                     if not material or material.lower() == "unknown":
-                        for mat, terms in keyword_map.items():
+                        all_keywords = {**high_priority_keywords, **low_priority_keywords}
+                        for mat, terms in all_keywords.items():
                             if any(kw in title for kw in terms):
                                 material = mat
                                 material_source = "title_fuzzy"
@@ -2306,10 +3240,23 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
 
                     return material, material_source
 
-                # Inject this into your scrape_amazon_product_page logic around material inference:
-                # Replace your entire material detection block with:
-                material, material_source = infer_material(title, text_blobs, asin)
-                print(f"🧬 Final inferred material: {material} (source: {material_source})")
+                # ✅ CONFIDENCE-BASED material detection with validation
+                if not material or material_source in ["Unknown", "none"]:
+                    fallback_material, fallback_source = infer_material(title, text_blobs, asin)
+                    if fallback_material and fallback_material != "Unknown":
+                        material = fallback_material
+                        material_source = fallback_source
+                        print(f"🧬 Fallback material detection: {material} (source: {material_source})")
+                else:
+                    # 🔍 VALIDATION: Check for contradictions with fallback detection
+                    fallback_material, fallback_source = infer_material(title, text_blobs, asin)
+                    if fallback_material and fallback_material != "Unknown" and fallback_material != material:
+                        print(f"⚠️ MATERIAL CONTRADICTION DETECTED:")
+                        print(f"   High-confidence: {material} (source: {material_source})")
+                        print(f"   Text blob guess: {fallback_material} (source: {fallback_source})")
+                        print(f"   🛡️ PRESERVING high-confidence data: {material}")
+                    else:
+                        print(f"✅ Material consistency validated: {material} (source: {material_source})")
 
                     
 

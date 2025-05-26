@@ -97,8 +97,8 @@ export default function ProductImpactCard({ result, showML, toggleShowML }) {
         {/* Rule-Based Prediction */}
         <div className="p-4 glass-card rounded-lg border-l-4 border-amber-500">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">⚡</span>
-            <h4 className="text-lg font-medium text-slate-200">Rule-Based</h4>
+            <span className="text-lg">📊</span>
+            <h4 className="text-lg font-medium text-slate-200">Standard Method</h4>
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -117,7 +117,7 @@ export default function ProductImpactCard({ result, showML, toggleShowML }) {
               Confidence: 80%
             </p>
             <p className="text-xs text-slate-500">
-              Traditional Heuristic Rules
+              Traditional calculation method
             </p>
           </div>
         </div>
@@ -306,13 +306,51 @@ export default function ProductImpactCard({ result, showML, toggleShowML }) {
           treesToOffset={attr.trees_to_offset}
         />
 
-        {/* ML vs DEFRA Chart */}
-        <MLvsDEFRAChart
-          showML={showML}
-          mlScore={attr.eco_score_ml}
-          defraCarbonKg={attr.carbon_kg}
-          mlCarbonKg={attr.ml_carbon_kg}
-        />
+        {/* ML vs DEFRA Chart with Toggle */}
+        <div className="space-y-4">
+          {/* Toggle Button */}
+          <div className="flex justify-between items-center">
+            <h4 className="text-lg font-display text-slate-200">
+              📊 Methodology Comparison
+            </h4>
+            <ModernButton
+              variant={showML ? "default" : "accent"}
+              size="sm"
+              onClick={toggleShowML}
+              className="flex items-center gap-2"
+            >
+              <span>💡</span>
+              <span>
+                {showML ? "Show Comparison" : "AI Only"}
+              </span>
+            </ModernButton>
+          </div>
+          
+          {/* Comparison Mode Indicator */}
+          <div className="text-center">
+            <ModernBadge 
+              variant={showML ? "warning" : "success"}
+              size="sm"
+            >
+              {showML 
+                ? "🧠 AI Prediction Only" 
+                : "⚡ AI vs Standard Method Comparison"
+              }
+            </ModernBadge>
+            <p className="text-xs text-slate-500 mt-2">
+              {showML 
+                ? "Click toggle to compare AI vs traditional calculation method" 
+                : "Comparing advanced AI model against standard environmental calculation"
+              }
+            </p>
+          </div>
+
+          {/* Chart */}
+          <MLvsDEFRAChart
+            showML={showML}
+            result={result}
+          />
+        </div>
       </motion.div>
     </ModernCard>
   );

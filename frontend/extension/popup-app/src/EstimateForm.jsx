@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./refined.css";
+import MLvsDefraChart from "./MLvsDefraChart";
 
 function smartGuessMaterial(title = "") {
   const lower = title.toLowerCase();
@@ -249,6 +250,9 @@ export default function EstimateForm() {
             <p>
               <strong>Carbon Emissions:</strong> {attributes.carbon_kg ?? "N/A"} kg CO₂
             </p>
+
+            {/* ML vs DEFRA Comparison Chart */}
+            <MLvsDefraChart result={result} />
 
             <div className="section-divider"></div>
             <p>

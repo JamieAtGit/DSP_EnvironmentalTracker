@@ -14,7 +14,9 @@ import {
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0];
-    const value = parseFloat(data.value).toFixed(3);
+    const value = parseFloat(data.value).toFixed(0);
+    const grade = data.payload.grade;
+    const confidence = data.payload.confidence;
     const isML = label === "AI Prediction";
     
     return (
@@ -27,17 +29,18 @@ const CustomTooltip = ({ active, payload, label }) => {
         <div className="text-center space-y-2">
           <p className="text-sm font-medium text-slate-200">{label}</p>
           <div className="text-2xl font-bold text-cyan-300">
-            {value} kg CO₂
+            Grade {grade}
+          </div>
+          <div className="text-sm text-slate-400">
+            Score: {value}/100
+          </div>
+          <div className="text-xs text-green-400 font-medium">
+            Confidence: {confidence}
           </div>
           {data.payload.methodology && (
             <p className="text-xs text-slate-400 leading-tight">
               {data.payload.methodology}
             </p>
-          )}
-          {isML && (
-            <div className="text-xs text-green-400 font-medium">
-              ⚡ Machine Learning
-            </div>
           )}
         </div>
       </motion.div>
@@ -46,53 +49,85 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function MLvsDEFRAChart({ showML, mlScore, defraCarbonKg, mlCarbonKg }) {
+export default function MLvsDEFRAChart({ showML, result }) {
   const [reduction, setReduction] = useState(null);
   const [animationKey, setAnimationKey] = useState(0);
+  
+  // Extract data from result object
+  const attributes = result?.attributes || {};
+  const mlScore = attributes.eco_score_ml;
+  const defrScore = attributes.eco_score_rule_based;
+  const mlConfidence = attributes.eco_score_ml_confidence;
+  const methodAgreement = attributes.method_agreement;
+  const predictionMethods = attributes.prediction_methods || {};
+
+  // Grade to numeric conversion for chart visualization
+  const gradeToNumeric = (grade) => {
+    const gradeMap = { 'A': 90, 'B': 75, 'C': 60, 'D': 45, 'E': 30, 'F': 15 };
+    return gradeMap[grade?.toString().toUpperCase()] || 0;
+  };
+  
+  // Color mapping for grades
+  const getGradeColor = (grade) => {
+    const colorMap = {
+      'A': '#10b981', // green-500
+      'B': '#22c55e', // green-400  
+      'C': '#eab308', // yellow-500
+      'D': '#f59e0b', // amber-500
+      'E': '#ef4444', // red-500
+      'F': '#dc2626'  // red-600
+    };
+    return colorMap[grade?.toString().toUpperCase()] || '#6b7280';
+  };
 
   // Memoized chart data with enhanced validation
   const chartData = useMemo(() => {
     const data = [];
     
-    // Validate inputs
-    const defraValue = parseFloat(defraCarbonKg) || 0;
-    const mlValue = parseFloat(mlCarbonKg) || 0;
+    const mlNumeric = gradeToNumeric(mlScore);
+    const defrNumeric = gradeToNumeric(defrScore);
     
-    if (!showML && defraValue > 0) {
+    if (defrScore && !showML) {
       data.push({ 
-        name: "Government Baseline", 
-        value: defraValue,
-        color: "#64748b", // slate-500 for government
-        methodology: "DEFRA standard emission factors",
-        confidence: "Standard"
+        name: "Standard Method", 
+        value: defrNumeric,
+        grade: defrScore,
+        color: getGradeColor(defrScore),
+        methodology: "Traditional calculation using government emission factors",
+        confidence: "80%"
       });
     }
     
-    if (mlValue > 0) {
+    if (mlScore) {
       data.push({ 
         name: "AI Prediction", 
-        value: mlValue,
-        color: "#06d6a0", // accent-mint from design system
+        value: mlNumeric,
+        grade: mlScore,
+        color: getGradeColor(mlScore),
         methodology: "XGBoost ML model with 11 features",
-        confidence: "High (85.8% accuracy)"
+        confidence: mlConfidence ? `${mlConfidence}%` : "N/A"
       });
     }
     
     return data;
-  }, [mlCarbonKg, defraCarbonKg, showML]);
+  }, [mlScore, defrScore, showML, mlConfidence]);
 
-  // Enhanced reduction calculation with edge cases
+  // Enhanced grade comparison calculation
   useEffect(() => {
-    if (!showML && defraCarbonKg > 0 && mlCarbonKg > 0) {
-      const defra = parseFloat(defraCarbonKg);
-      const ml = parseFloat(mlCarbonKg);
-      const percent = ((defra - ml) / defra) * 100;
-      setReduction(percent.toFixed(1));
+    if (!showML && mlScore && defrScore) {
+      const mlNumeric = gradeToNumeric(mlScore);
+      const defrNumeric = gradeToNumeric(defrScore);
+      if (mlNumeric > defrNumeric) {
+        const improvement = ((mlNumeric - defrNumeric) / defrNumeric) * 100;
+        setReduction(improvement.toFixed(1));
+      } else {
+        setReduction(null);
+      }
     } else {
       setReduction(null);
     }
     setAnimationKey(prev => prev + 1); // Trigger re-animation
-  }, [mlCarbonKg, defraCarbonKg, showML]);
+  }, [mlScore, defrScore, showML]);
 
   // Error handling for missing data
   if (chartData.length === 0) {
@@ -137,7 +172,7 @@ export default function MLvsDEFRAChart({ showML, mlScore, defraCarbonKg, mlCarbo
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-3">
           <h3 className="text-xl font-display text-slate-200">
-            📊 Carbon Emissions Comparison
+            📊 Methodology Comparison
           </h3>
           {betterMethod && (
             <div className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -145,13 +180,13 @@ export default function MLvsDEFRAChart({ showML, mlScore, defraCarbonKg, mlCarbo
                 ? "bg-green-500/20 text-green-400 border border-green-500/30" 
                 : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
             }`}>
-              {betterMethod === "AI" ? "⚡ AI Optimized" : "📊 Standard Method"}
+              {betterMethod === "AI" ? "⚡ AI Optimized" : "📊 Standard Calculation"}
             </div>
           )}
         </div>
         <p className="text-sm text-slate-400">
           Methodology comparison: <span className="text-cyan-300 font-medium">
-            {showML ? "AI prediction only" : "Machine learning vs government standards"}
+            {showML ? "AI prediction only" : "Advanced AI vs standard calculation method"}
           </span>
         </p>
       </div>
@@ -171,8 +206,8 @@ export default function MLvsDEFRAChart({ showML, mlScore, defraCarbonKg, mlCarbo
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#94a3b8', fontSize: 12 }}
-              tickFormatter={(value) => `${value.toFixed(2)} kg`}
-              domain={[0, 'dataMax + 0.5']}
+              tickFormatter={(value) => `${value}/100`}
+              domain={[0, 100]}
             />
             <YAxis 
               type="category" 

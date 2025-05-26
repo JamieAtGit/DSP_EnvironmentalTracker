@@ -308,5 +308,273 @@
       "material_source": "text_blob_match",
       "material_confidence": "high"
     }
+  },
+  "B0007VO0CQ": {
+    "asin": "B0007VO0CQ",
+    "title": "OXO Good Grips Box Grater,Silver/Black",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9187.5,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 0.43,
+    "raw_product_weight_kg": 0.408,
+    "dimensions_cm": "29.97 x 11.43 x 7.37 cm",
+    "material_type": "Steel",
+    "co2_emissions": 0.73,
+    "recyclability": "Very Low",
+    "recyclability_percentage": 0,
+    "recyclability_description": "Single material: Unknown material",
+    "transport_mode": "Ship",
+    "confidence": "High",
+    "materials": {
+      "primary_material": "Pack Of",
+      "all_materials": [
+        {
+          "name": "Pack Of",
+          "weight": 1.0
+        }
+      ],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "product_dimensions",
+      "weight_confidence": "high",
+      "material_source": "text_blob_match",
+      "material_confidence": "medium"
+    }
+  },
+  "B0F63CJ9WK": {
+    "asin": "B0F63CJ9WK",
+    "title": "COSORI Electric Kettle Glass, 3000W with No Plastic Filter & Spout, Stainless Steel Inner Lid, Quiet Fast Boil with Blue LED, BPA Free, Smart Boil-Dry Protection, Black Small Kettles Electric, 1.5L",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9187.5,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 1.18,
+    "raw_product_weight_kg": 1.12,
+    "dimensions_cm": "23 x 16 x 25.6 cm",
+    "material_type": "Plastic",
+    "co2_emissions": 2.8,
+    "recyclability": "Medium",
+    "recyclability_percentage": 55,
+    "recyclability_description": "Recyclability varies by plastic type (1-7)",
+    "transport_mode": "Ship",
+    "confidence": "High",
+    "materials": {
+      "primary_material": "Plastic",
+      "all_materials": [],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "product_details_table.a-keyvalue tr",
+      "weight_confidence": "high",
+      "material_source": "title_fuzzy",
+      "material_confidence": "unknown"
+    }
+  },
+  "B0CFVYDQTT": {
+    "asin": "B0CFVYDQTT",
+    "title": "Innoteck Kitchen Pro 1.7L Electric Kettle - Green Ridged Textured Body & Stainless-Steel Accents - BPA-Free Hot Water Boiler with Auto Shut-Off - Boil Water Quickly for Preparing Tea, Coffee",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9187.5,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 1.26,
+    "raw_product_weight_kg": 1.2,
+    "dimensions_cm": "25.1 x 22.3 x 17.3 cm",
+    "material_type": "Steel",
+    "co2_emissions": 2.16,
+    "recyclability": "High",
+    "recyclability_percentage": 85,
+    "recyclability_description": "Highly recyclable metal with strong demand",
+    "transport_mode": "Ship",
+    "confidence": "High",
+    "materials": {
+      "primary_material": "Steel",
+      "all_materials": [],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_intelligence_ai_validated",
+      "origin_confidence": "very_high",
+      "weight_source": "product_details_table.a-keyvalue tr",
+      "weight_confidence": "high",
+      "material_source": "title_fuzzy",
+      "material_confidence": "unknown"
+    }
+  },
+  "B07P9VSDHQ": {
+    "asin": "B07P9VSDHQ",
+    "title": "Tala Stainless Steel Pyramid Grater, 4 Sided Handheld Box Grater for Slicing, Grating, Zester and Shredding Cheese, Vegatables and Other Foods, with Grip Handle and Non-Slip Base",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9187.5,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 0.21,
+    "raw_product_weight_kg": 0.199,
+    "dimensions_cm": "23.5 x 11 x 11 cm",
+    "material_type": "Steel",
+    "co2_emissions": 0.36,
+    "recyclability": "High",
+    "recyclability_percentage": 85,
+    "recyclability_description": "Highly recyclable metal with strong demand",
+    "transport_mode": "Ship",
+    "confidence": "High",
+    "materials": {
+      "primary_material": "Steel",
+      "all_materials": [],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "product_dimensions",
+      "weight_confidence": "high",
+      "material_source": "title_fuzzy",
+      "material_confidence": "unknown"
+    }
+  },
+  "B088YFGV5M": {
+    "asin": "B088YFGV5M",
+    "title": "2PCS Kitchen Grater, Cheese Grater Fine Grater for Kitchen with Handle and Razor-Sharp Stainless Steel Blade and for Chocolate, Cheese, Carrot, Ginger, Coconut, Nuts",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9187.5,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 0.05,
+    "raw_product_weight_kg": 0.05,
+    "dimensions_cm": "24.5 x 2.5 x 0.3 cm",
+    "material_type": "Plastic",
+    "co2_emissions": 0.12,
+    "recyclability": "Very Low",
+    "recyclability_percentage": 0,
+    "recyclability_description": "Single material: Unknown material",
+    "transport_mode": "Ship",
+    "confidence": "High",
+    "materials": {
+      "primary_material": "Stainless Steel",
+      "all_materials": [
+        {
+          "name": "Stainless Steel",
+          "weight": 1.0
+        }
+      ],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_intelligence_ai_validated",
+      "origin_confidence": "very_high",
+      "weight_source": "product_dimensions",
+      "weight_confidence": "high",
+      "material_source": "text_blob_match",
+      "material_confidence": "high"
+    }
+  },
+  "B09BJ1HM45": {
+    "asin": "B09BJ1HM45",
+    "title": "ZWILLING Z-Cut square drive, multifunctional, stainless steel blade, plastic housing, two-way grinding technology, grey",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9187.5,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 0.68,
+    "raw_product_weight_kg": 0.644,
+    "dimensions_cm": "10.8 x 10.8 x 25.7 cm",
+    "material_type": "Steel",
+    "co2_emissions": 1.16,
+    "recyclability": "Very Low",
+    "recyclability_percentage": 0,
+    "recyclability_description": "Single material: Unknown material",
+    "transport_mode": "Ship",
+    "confidence": "High",
+    "materials": {
+      "primary_material": "Stainless Steel",
+      "all_materials": [
+        {
+          "name": "Stainless Steel",
+          "weight": 1.0
+        }
+      ],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "product_dimensions",
+      "weight_confidence": "high",
+      "material_source": "structured_multi_material",
+      "material_confidence": "high"
+    }
+  },
+  "B00LIJ2Z6Y": {
+    "asin": "B00LIJ2Z6Y",
+    "title": "Karrimor Men's Bodmin Weathertite Hiking Boots",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9187.5,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 0.28,
+    "raw_product_weight_kg": 0.268,
+    "dimensions_cm": "23.54 x 33.9 x 12.48 cm",
+    "material_type": "Plastic",
+    "co2_emissions": 0.67,
+    "recyclability": "Medium",
+    "recyclability_percentage": 55,
+    "recyclability_description": "Recyclability varies by plastic type (1-7)",
+    "transport_mode": "Ship",
+    "confidence": "High",
+    "materials": {
+      "primary_material": "Plastic",
+      "all_materials": [],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "product_dimensions",
+      "weight_confidence": "high",
+      "material_source": "text_blob_match_low_priority",
+      "material_confidence": "unknown"
+    }
+  },
+  "B00TS5EKYA": {
+    "asin": "B00TS5EKYA",
+    "title": "Metro 30",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9187.5,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 0.38,
+    "raw_product_weight_kg": 0.358,
+    "dimensions_cm": "5.91 x 3.94 x 2.76 cm",
+    "material_type": "Polyester",
+    "co2_emissions": 1.36,
+    "recyclability": "Medium",
+    "recyclability_percentage": 45,
+    "recyclability_description": "Single material: Polyester (45%)",
+    "transport_mode": "Ship",
+    "confidence": "High",
+    "materials": {
+      "primary_material": "Polyester",
+      "all_materials": [
+        {
+          "name": "Polyester",
+          "weight": 1.0
+        }
+      ],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "product_dimensions",
+      "weight_confidence": "high",
+      "material_source": "structured_multi_material",
+      "material_confidence": "high"
+    }
   }
 }

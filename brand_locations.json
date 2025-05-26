@@ -320,5 +320,68 @@
       "city": "Shanghai"
     },
     "fulfillment": "UK"
+  },
+  "oxo": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "cosori": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "innoteck": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "tala": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "kuou": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "zwilling": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "nortiv 8": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "karrimor": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
+  },
+  "mountain warehouse": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
   }
 }

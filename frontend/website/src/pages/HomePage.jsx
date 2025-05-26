@@ -14,7 +14,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
-  const [showML, setShowML] = useState(true);
+  const [showML, setShowML] = useState(false); // Default to comparison mode
 
   const handleSearch = async () => {
     setLoading(true);
