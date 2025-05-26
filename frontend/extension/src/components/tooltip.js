@@ -318,31 +318,60 @@ async function smartGuessMaterialFromTitle(title) {
   // Load material insights to get comprehensive list
   const insights = window.materialInsights || await window.loadMaterialInsights?.() || {};
   
-  // Enhanced category-based guessing with material specificity
+  // Enhanced category-based guessing with comprehensive material families
   const categoryPatterns = [
-    // Leather products (with specific types)
-    { patterns: ['genuine leather', 'real leather', 'full grain'], material: 'leather', priority: 20 },
-    { patterns: ['suede', 'nubuck'], material: 'leather', priority: 19 },
-    { patterns: ['vegan leather', 'faux leather', 'synthetic leather'], material: 'faux leather', priority: 18 },
-    { patterns: ['patent leather'], material: 'leather', priority: 17 },
+    // LEATHER PRODUCTS (Comprehensive leather detection)
+    { patterns: ['genuine leather', 'real leather', 'full grain leather', 'top grain leather'], material: 'leather', priority: 22 },
+    { patterns: ['suede', 'nubuck', 'patent leather'], material: 'leather', priority: 21 },
+    { patterns: ['vegan leather', 'faux leather', 'synthetic leather', 'pleather'], material: 'faux leather', priority: 20 },
+    { patterns: ['mushroom leather', 'mycelium leather'], material: 'mushroom leather', priority: 20 },
+    { patterns: ['apple leather', 'grape leather', 'cactus leather'], material: 'apple leather', priority: 20 },
+    { patterns: ['recycled leather', 'bonded leather'], material: 'recycled leather', priority: 19 },
     
-    // Bags & Backpacks (High Priority - prioritize nylon over aluminum)
-    { patterns: ['backpack', 'rucksack', 'hiking backpack', 'travel backpack', 'daypack'], material: 'nylon', priority: 15 },
-    { patterns: ['gym bag', 'sports bag', 'duffel bag', 'duffle bag'], material: 'nylon', priority: 14 },
-    { patterns: ['laptop bag', 'briefcase', 'computer bag'], material: 'nylon', priority: 13 },
-    { patterns: ['hiking pack', 'climbing pack', 'outdoor pack'], material: 'nylon', priority: 14 },
-    { patterns: ['leather bag', 'leather handbag'], material: 'leather', priority: 12 },
+    // METALS (Comprehensive metal detection)
+    { patterns: ['stainless steel', 'surgical steel'], material: 'stainless steel', priority: 22 },
+    { patterns: ['carbon steel', 'high carbon steel'], material: 'carbon steel', priority: 21 },
+    { patterns: ['titanium alloy', 'titanium'], material: 'titanium alloys', priority: 21 },
+    { patterns: ['cast iron', 'wrought iron'], material: 'cast iron', priority: 20 },
+    { patterns: ['brass', 'bronze', 'copper'], material: 'brass', priority: 19 },
+    
+    // BAGS & BACKPACKS (High Priority - prioritize nylon over aluminum)
+    { patterns: ['backpack', 'rucksack', 'hiking backpack', 'travel backpack', 'daypack'], material: 'nylon', priority: 18 },
+    { patterns: ['gym bag', 'sports bag', 'duffel bag', 'duffle bag'], material: 'nylon', priority: 17 },
+    { patterns: ['laptop bag', 'briefcase', 'computer bag'], material: 'nylon', priority: 16 },
+    { patterns: ['hiking pack', 'climbing pack', 'outdoor pack'], material: 'nylon', priority: 17 },
+    { patterns: ['leather bag', 'leather handbag', 'leather purse'], material: 'leather', priority: 15 },
+    { patterns: ['canvas bag', 'canvas backpack'], material: 'canvas', priority: 14 },
     { patterns: ['bag', 'handbag', 'shoulder bag', 'tote bag'], material: 'leather', priority: 9 },
     
-    // Textiles & Clothing (with specific material detection)
-    { patterns: ['organic cotton', '100% cotton'], material: 'cotton', priority: 16 },
-    { patterns: ['recycled polyester', 'eco polyester'], material: 'recycled polyester', priority: 15 },
-    { patterns: ['merino wool', 'pure wool'], material: 'wool', priority: 15 },
-    { patterns: ['cashmere'], material: 'cashmere', priority: 15 },
-    { patterns: ['silk'], material: 'silk', priority: 14 },
-    { patterns: ['linen'], material: 'linen', priority: 14 },
+    // TEXTILES & CLOTHING (Comprehensive textile detection)
+    // Natural Plant Fibers
+    { patterns: ['organic cotton', '100% cotton', 'pure cotton'], material: 'cotton', priority: 18 },
+    { patterns: ['recycled cotton', 'sustainable cotton'], material: 'recycled cotton', priority: 17 },
+    { patterns: ['linen', 'flax', 'irish linen'], material: 'linen', priority: 17 },
+    { patterns: ['hemp', 'hemp fiber', 'industrial hemp'], material: 'hemp', priority: 17 },
+    { patterns: ['jute', 'burlap', 'hessian'], material: 'jute', priority: 16 },
+    { patterns: ['bamboo fiber', 'bamboo fabric'], material: 'bamboo', priority: 16 },
+    
+    // Animal Fibers  
+    { patterns: ['merino wool', 'pure wool', 'virgin wool'], material: 'merino wool', priority: 18 },
+    { patterns: ['cashmere', 'kashmir wool'], material: 'cashmere', priority: 18 },
+    { patterns: ['alpaca', 'alpaca wool'], material: 'alpaca', priority: 17 },
+    { patterns: ['mohair', 'angora mohair'], material: 'mohair', priority: 17 },
+    { patterns: ['silk', 'mulberry silk', 'pure silk'], material: 'silk', priority: 17 },
+    { patterns: ['down', 'goose down', 'duck down'], material: 'down', priority: 16 },
+    
+    // Synthetic Fibers
+    { patterns: ['recycled polyester', 'eco polyester', 'rPET'], material: 'recycled polyester', priority: 17 },
+    { patterns: ['recycled nylon', 'econyl'], material: 'recycled nylon', priority: 17 },
+    { patterns: ['lyocell', 'tencel', 'modal'], material: 'lyocell tencel', priority: 16 },
+    { patterns: ['viscose', 'rayon'], material: 'viscose', priority: 15 },
+    
+    // Clothing Items
+    { patterns: ['denim jeans', 'denim jacket'], material: 'denim', priority: 15 },
+    { patterns: ['canvas shoes', 'canvas sneakers'], material: 'canvas', priority: 14 },
     { patterns: ['t-shirt', 'shirt', 'tee', 'top'], material: 'cotton', priority: 10 },
-    { patterns: ['jeans', 'denim'], material: 'cotton', priority: 10 },
+    { patterns: ['jeans', 'denim'], material: 'denim', priority: 10 },
     { patterns: ['jacket', 'coat', 'hoodie', 'sweater'], material: 'polyester', priority: 9 },
     { patterns: ['pants', 'trousers', 'leggings'], material: 'cotton', priority: 8 },
     { patterns: ['dress', 'skirt'], material: 'polyester', priority: 8 },
@@ -350,11 +379,20 @@ async function smartGuessMaterialFromTitle(title) {
     { patterns: ['leather shoes', 'leather boots'], material: 'leather', priority: 12 },
     { patterns: ['shoes', 'sneakers', 'trainers', 'boots'], material: 'leather', priority: 8 },
     
-    // Electronics (with specific plastic types)
-    { patterns: ['silicone case', 'silicone cover'], material: 'silicone', priority: 12 },
-    { patterns: ['tpu case'], material: 'polyurethane', priority: 12 },
-    { patterns: ['polycarbonate case'], material: 'polycarbonate', priority: 12 },
-    { patterns: ['abs plastic'], material: 'abs', priority: 12 },
+    // ELECTRONICS & TECH (Comprehensive tech material detection)
+    // Phone Cases & Accessories
+    { patterns: ['silicone case', 'silicone cover', 'silicone protector'], material: 'silicone', priority: 16 },
+    { patterns: ['tpu case', 'thermoplastic polyurethane'], material: 'polyurethane', priority: 16 },
+    { patterns: ['polycarbonate case', 'pc case'], material: 'polycarbonate', priority: 16 },
+    { patterns: ['abs case', 'abs plastic case'], material: 'abs', priority: 16 },
+    { patterns: ['leather case', 'leather phone case'], material: 'leather', priority: 15 },
+    { patterns: ['aluminum case', 'metal case'], material: 'aluminum', priority: 15 },
+    
+    // Devices
+    { patterns: ['titanium watch', 'titanium phone'], material: 'titanium alloys', priority: 16 },
+    { patterns: ['stainless steel watch', 'steel watch'], material: 'stainless steel', priority: 15 },
+    { patterns: ['carbon fiber case', 'carbon fiber phone'], material: 'carbon fiber', priority: 15 },
+    { patterns: ['ceramic watch', 'ceramic phone'], material: 'ceramic', priority: 14 },
     { patterns: ['headphones', 'earbuds', 'earphones'], material: 'plastics', priority: 8 },
     { patterns: ['phone case', 'case', 'cover', 'protector'], material: 'plastics', priority: 9 },
     { patterns: ['laptop', 'macbook', 'ultrabook', 'notebook computer'], material: 'aluminum', priority: 7 },
@@ -362,14 +400,29 @@ async function smartGuessMaterialFromTitle(title) {
     { patterns: ['speaker', 'soundbar'], material: 'plastics', priority: 7 },
     { patterns: ['tablet', 'ipad'], material: 'aluminum', priority: 7 },
     
-    // Home & Kitchen (with material specificity)
-    { patterns: ['stainless steel bottle', 'steel bottle'], material: 'steel', priority: 12 },
-    { patterns: ['glass bottle', 'borosilicate'], material: 'glass', priority: 12 },
-    { patterns: ['bamboo cutting board'], material: 'bamboo', priority: 12 },
-    { patterns: ['wooden cutting board'], material: 'timber', priority: 11 },
-    { patterns: ['ceramic mug', 'porcelain'], material: 'ceramic', priority: 11 },
-    { patterns: ['water bottle', 'bottle', 'flask', 'tumbler'], material: 'steel', priority: 8 },
-    { patterns: ['mug', 'cup', 'glass'], material: 'ceramic', priority: 8 },
+    // HOME & KITCHEN (Comprehensive home goods detection)
+    // Drinkware
+    { patterns: ['stainless steel bottle', 'steel water bottle', 'insulated steel'], material: 'stainless steel', priority: 17 },
+    { patterns: ['glass bottle', 'borosilicate glass', 'tempered glass'], material: 'glass', priority: 16 },
+    { patterns: ['ceramic mug', 'porcelain mug', 'stoneware mug'], material: 'ceramic', priority: 16 },
+    { patterns: ['bamboo tumbler', 'bamboo cup'], material: 'bamboo', priority: 15 },
+    { patterns: ['silicone bottle', 'collapsible bottle'], material: 'silicone', priority: 14 },
+    
+    // Cookware  
+    { patterns: ['cast iron pan', 'cast iron skillet'], material: 'cast iron', priority: 17 },
+    { patterns: ['stainless steel pan', 'steel cookware'], material: 'stainless steel', priority: 16 },
+    { patterns: ['carbon steel pan', 'carbon steel wok'], material: 'carbon steel', priority: 16 },
+    { patterns: ['ceramic cookware', 'ceramic pan'], material: 'ceramic', priority: 15 },
+    { patterns: ['copper cookware', 'copper pan'], material: 'copper', priority: 15 },
+    
+    // Cutting Boards
+    { patterns: ['bamboo cutting board', 'bamboo chopping board'], material: 'bamboo', priority: 16 },
+    { patterns: ['wooden cutting board', 'wood chopping board'], material: 'timber', priority: 15 },
+    { patterns: ['plastic cutting board', 'polyethylene board'], material: 'polyethylene', priority: 14 },
+    
+    // General Items
+    { patterns: ['water bottle', 'bottle', 'flask', 'tumbler'], material: 'stainless steel', priority: 8 },
+    { patterns: ['mug', 'cup'], material: 'ceramic', priority: 8 },
     { patterns: ['pan', 'pot', 'cookware', 'frying pan'], material: 'aluminum', priority: 8 },
     { patterns: ['cutting board', 'chopping board'], material: 'timber', priority: 9 },
     { patterns: ['plate', 'bowl', 'dish'], material: 'ceramic', priority: 8 },
@@ -486,16 +539,43 @@ function showTooltipFor(target, info) {
                          : confidence >= 60 ? "#f59e0b" 
                          : "#ef4444";
 
-  // Enhanced material name display
+  // Enhanced material name display with family information
   const materialName = info.name;
   const isSpecificMaterial = info.isSpecific || materialName.includes(' ') || 
-                           ['faux leather', 'recycled', 'organic', 'vegan', 'genuine'].some(prefix => 
+                           ['faux leather', 'recycled', 'organic', 'vegan', 'genuine', 'stainless', 'carbon'].some(prefix => 
                            materialName.toLowerCase().includes(prefix));
   
-  const materialIcon = isSpecificMaterial ? "🎯" : "🧬";
+  // Enhanced material categorization with family info
+  const familyInfo = info.family ? ` (${info.family.replace('_', ' ')})` : '';
+  const subcategoryInfo = info.subcategory ? ` - ${info.subcategory.replace('_', ' ')}` : '';
+  
+  // Material type icons based on family
+  const familyIcons = {
+    metals: '🔩',
+    polymers: '🧪',
+    elastomers: '🔄',
+    ceramics: '🏺',
+    glasses: '🔍',
+    stone_mineral: '🪨',
+    textiles: '🧵',
+    leather: '💼',
+    wood_plant: '🌳',
+    paper_cellulose: '📄',
+    composites: '⚙️',
+    construction: '🏠',
+    chemical: '⚗️'
+  };
+  
+  const materialIcon = info.family && familyIcons[info.family] ? familyIcons[info.family] : 
+                      (isSpecificMaterial ? "🎯" : "🧬");
+  
   const specificityNote = isSpecificMaterial ? 
-    `<div style="font-size: 10px; color: #10b981; margin-top: 2px;">✨ Specific material type detected</div>` : 
-    `<div style="font-size: 10px; color: #888; margin-top: 2px;">📈 General material category</div>`;
+    `<div style="font-size: 10px; color: #10b981; margin-top: 2px;">✨ Specific material type detected${familyInfo}</div>` : 
+    `<div style="font-size: 10px; color: #888; margin-top: 2px;">📈 General material category${familyInfo}</div>`;
+
+  // Enhanced compound material info
+  const compoundInfo = info.compound && info.originalHint ? 
+    `<div style="font-size: 10px; color: #a78bfa; margin-top: 2px;">🧬 Detected from: "${info.originalHint}"</div>` : '';
 
   // Look for related materials to suggest alternatives
   const relatedMaterials = findRelatedMaterials(materialName);
@@ -508,6 +588,7 @@ function showTooltipFor(target, info) {
     <div style="border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; margin-bottom: 8px;">
       <strong>${materialIcon} Material: ${capitalizeFirst(materialName)}</strong>
       ${specificityNote}
+      ${compoundInfo}
       <div style="margin-top: 4px; font-size: 11px; color: #888;">
         Confidence: <span style="color: ${confidenceColor};">${Math.round(confidence)}%</span>
       </div>
@@ -527,35 +608,105 @@ function showTooltipFor(target, info) {
   attachTooltipEvents(target, html);
 }
 
-// Helper function to find related materials
+// Enhanced helper function to find related materials using comprehensive families
 function findRelatedMaterials(materialName) {
   const insights = window.materialInsights || {};
   const baseName = materialName.toLowerCase();
   const related = [];
   
-  // Define material families
-  const families = {
-    leather: ['leather', 'suede', 'faux leather', 'vegan leather', 'mushroom leather', 'apple leather'],
-    plastic: ['plastic', 'pvc', 'abs', 'polycarbonate', 'polyethylene', 'bioplastic'],
-    cotton: ['cotton', 'organic cotton', 'recycled cotton'],
-    metal: ['aluminum', 'steel', 'brass', 'copper'],
-    wood: ['timber', 'bamboo', 'cork']
+  // Define comprehensive material families for related materials
+  const materialFamilies = {
+    // METALS
+    metals: ['aluminum', 'steel', 'stainless steel', 'carbon steel', 'titanium alloys', 'brass', 'copper', 'iron', 'zinc', 'tin'],
+    
+    // LEATHER FAMILY
+    leather: ['leather', 'suede', 'faux leather', 'vegan leather', 'mushroom leather', 'apple leather', 'grape leather', 'cactus leather', 'palm leather', 'recycled leather'],
+    
+    // POLYMERS/PLASTICS
+    polymers: ['plastics', 'polyethylene', 'polypropylene', 'polystyrene', 'pvc', 'abs', 'polycarbonate', 'polyurethane', 'bioplastic', 'recovered plastic', 'acrylic'],
+    
+    // NATURAL PLANT FIBERS
+    plant_fibers: ['cotton', 'linen', 'hemp', 'jute', 'ramie', 'sisal', 'organic cotton', 'recycled cotton'],
+    
+    // ANIMAL FIBERS
+    animal_fibers: ['wool', 'silk', 'cashmere', 'alpaca', 'mohair', 'merino wool', 'down'],
+    
+    // SYNTHETIC FIBERS
+    synthetic_fibers: ['polyester', 'nylon', 'acrylic', 'spandex', 'viscose', 'rayon', 'recycled polyester', 'recycled nylon'],
+    
+    // ELASTOMERS
+    elastomers: ['rubber', 'silicone', 'elastane', 'spandex', 'reclaimed rubber'],
+    
+    // WOOD/PLANT MATERIALS
+    wood_materials: ['timber', 'bamboo', 'cork', 'plywood', 'reclaimed wood', 'wood'],
+    
+    // CERAMICS
+    ceramics: ['ceramic', 'ceramics', 'porcelain', 'stoneware', 'brick'],
+    
+    // GLASS
+    glass_materials: ['glass', 'fiberglass'],
+    
+    // STONE/MINERAL
+    stone_materials: ['granite', 'marble', 'limestone', 'concrete', 'cement', 'stone'],
+    
+    // PAPER/CELLULOSE
+    paper_materials: ['paper', 'cardboard', 'wood pulp'],
+    
+    // COMPOSITES
+    composites: ['carbon fiber', 'fiberglass', 'kevlar']
   };
   
   // Find which family the current material belongs to
-  for (const [family, materials] of Object.entries(families)) {
-    if (materials.some(m => baseName.includes(m) || m.includes(baseName))) {
+  for (const [familyName, materials] of Object.entries(materialFamilies)) {
+    const materialMatch = materials.find(m => {
+      return baseName.includes(m) || m.includes(baseName) || 
+             // Handle compound materials
+             (baseName.includes(' ') && m.includes(baseName.split(' ')[0])) ||
+             (m.includes(' ') && baseName.includes(m.split(' ')[0]));
+    });
+    
+    if (materialMatch) {
       // Add other materials from the same family
       for (const material of materials) {
-        if (material !== baseName && insights[material] && !related.includes(material)) {
+        if (material !== materialMatch && 
+            material !== baseName && 
+            insights[material] && 
+            !related.includes(material)) {
           related.push(material);
         }
       }
+      
+      // Also look for variations with prefixes (recycled, organic, etc.)
+      const baseMaterial = baseName.replace(/(recycled|organic|sustainable|premium|eco|bio)\s+/, '');
+      const prefixes = ['recycled', 'organic', 'sustainable', 'eco', 'bio'];
+      
+      for (const prefix of prefixes) {
+        const variation = `${prefix} ${baseMaterial}`;
+        if (insights[variation] && !related.includes(variation) && variation !== baseName) {
+          related.push(variation);
+        }
+      }
+      
       break;
     }
   }
   
-  return related;
+  // If no family match, look for direct variations
+  if (related.length === 0) {
+    const allMaterials = Object.keys(insights);
+    const baseMaterial = baseName.replace(/(recycled|organic|sustainable|premium|eco|bio)\s+/, '');
+    
+    for (const material of allMaterials) {
+      const materialLower = material.toLowerCase();
+      if ((materialLower.includes(baseMaterial) || baseMaterial.includes(materialLower)) &&
+          materialLower !== baseName &&
+          related.length < 5) {
+        related.push(material);
+      }
+    }
+  }
+  
+  return related.slice(0, 4); // Limit to 4 related materials
 }
 
 // Helper function to capitalize first letter

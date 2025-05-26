@@ -45,71 +45,213 @@ async function enhanceTooltips() {
   return;
 }
 
-// Enhanced material type detection function
+// Enhanced material type detection function with comprehensive families
 function detectSpecificMaterialType(materialHint, data) {
   if (!materialHint) return null;
   
   const hint = materialHint.toLowerCase();
   
-  // Define material families and their specific types
+  // Define comprehensive material families and their specific types
   const materialFamilies = {
-    leather: [
-      'genuine leather', 'real leather', 'full grain leather', 'top grain leather',
-      'suede', 'nubuck', 'patent leather', 'vegan leather', 'faux leather', 
-      'synthetic leather', 'mushroom leather', 'apple leather', 'grape leather',
-      'cactus leather', 'palm leather', 'recycled leather'
-    ],
-    plastic: [
-      'abs', 'pvc', 'polycarbonate', 'polyethylene', 'polypropylene', 
-      'polystyrene', 'polyurethane', 'bioplastic', 'recycled plastic',
-      'recovered plastic', 'biodegradable plastic'
-    ],
-    cotton: [
-      'organic cotton', 'recycled cotton', 'pima cotton', 'egyptian cotton',
-      'cotton blend', 'cotton canvas', 'cotton denim', 'cotton jersey'
-    ],
-    wool: [
-      'merino wool', 'cashmere', 'alpaca', 'mohair', 'angora', 
-      'recycled wool', 'organic wool'
-    ],
-    silk: [
-      'mulberry silk', 'wild silk', 'organic silk', 'peace silk'
-    ]
+    // METALS - Comprehensive metal family
+    metals: {
+      'precious_metals': ['gold', 'silver', 'platinum', 'palladium'],
+      'common_metals': ['aluminum', 'aluminium', 'steel', 'iron', 'copper', 'brass', 'bronze', 'zinc', 'tin', 'lead'],
+      'specialty_metals': ['titanium', 'titanium alloys', 'stainless steel', 'carbon steel', 'tool steel', 'low-alloy steel', 'cast iron', 'nickel alloys'],
+      'metal_composites': ['metal', 'alloy', 'metallic']
+    },
+    
+    // POLYMERS - Reorganized and expanded polymer family
+    polymers: {
+      'thermoplastics': ['polyethylene', 'polypropylene', 'polystyrene', 'pvc', 'abs', 'polycarbonate', 'pmma', 'acrylic'],
+      'thermosets': ['polyurethane', 'epoxy', 'phenolic', 'ptfe'],
+      'bio_polymers': ['pla', 'pha', 'pbat', 'bioplastic'],
+      'recycled_polymers': ['recovered plastic', 'recycled plastic', 'plastics'],
+      'specialty_polymers': ['kevlar', 'qmonos', 'vinyl']
+    },
+    
+    // ELASTOMERS - Rubber and elastic materials
+    elastomers: {
+      'natural_rubber': ['rubber', 'natural rubber', 'latex'],
+      'synthetic_elastomers': ['silicone', 'neoprene', 'epdm', 'reclaimed rubber'],
+      'elastic_fibers': ['elastane', 'spandex', 'lycra']
+    },
+    
+    // CERAMICS - Clay-based and technical ceramics
+    ceramics: {
+      'traditional_ceramics': ['ceramic', 'ceramics', 'porcelain', 'stoneware', 'earthenware', 'terracotta'],
+      'construction_ceramics': ['brick', 'tile', 'clay'],
+      'technical_ceramics': ['alumina', 'zirconia', 'silicon carbide']
+    },
+    
+    // GLASSES - Various glass types
+    glasses: {
+      'common_glass': ['glass', 'tempered glass', 'laminated glass'],
+      'specialty_glass': ['borosilicate', 'optical glass', 'crystal'],
+      'glass_composites': ['fiberglass', 'glass fiber']
+    },
+    
+    // STONE/MINERAL - Natural and processed stone materials
+    stone_mineral: {
+      'natural_stone': ['granite', 'marble', 'limestone', 'sandstone', 'slate', 'stone', 'quartz'],
+      'processed_stone': ['concrete', 'cement', 'terrazzo', 'plaster']
+    },
+    
+    // TEXTILES - Comprehensive textile families
+    textiles: {
+      'natural_plant_fibers': ['cotton', 'linen', 'hemp', 'jute', 'ramie', 'sisal', 'abaca', 'nettle fiber', 'coir', 'coconut fiber'],
+      'natural_animal_fibers': ['wool', 'silk', 'cashmere', 'alpaca', 'mohair', 'merino wool', 'down', 'angora'],
+      'synthetic_fibers': ['polyester', 'nylon', 'acrylic', 'spandex', 'elastane', 'lycra', 'viscose', 'rayon', 'modal', 'lyocell', 'lyocell tencel'],
+      'innovative_bio_fibers': ['milk fiber', 'orange fiber', 'rose fiber', 'soy fabric', 'lotus fiber', 'seacell', 'econyl', 's.cafe'],
+      'recycled_textiles': ['recycled cotton', 'recycled polyester', 'recycled wool', 'recycled nylon'],
+      'fabric_constructions': ['denim', 'canvas', 'velvet', 'satin', 'chiffon', 'georgette', 'organza', 'tulle', 'corduroy', 'flannel', 'fleece', 'jersey', 'crepe', 'seersucker']
+    },
+    
+    // LEATHER - Expanded leather family
+    leather: {
+      'genuine_leather': ['leather', 'genuine leather', 'real leather', 'full grain leather', 'top grain leather', 'nubuck', 'suede', 'patent leather'],
+      'alternative_leather': ['faux leather', 'vegan leather', 'synthetic leather', 'pleather'],
+      'innovative_leather': ['mushroom leather', 'mycelium', 'apple leather', 'grape leather', 'cactus leather', 'palm leather', 'piñatex'],
+      'recycled_leather': ['recycled leather', 'bonded leather']
+    },
+    
+    // WOOD/PLANT - Wood and plant-based materials
+    wood_plant: {
+      'solid_wood': ['timber', 'wood', 'lumber', 'hardwood', 'softwood'],
+      'engineered_wood': ['plywood', 'mdf', 'chipboard', 'osb', 'oriented strand board'],
+      'sustainable_wood': ['bamboo', 'cork', 'reclaimed wood', 'rattan'],
+      'plant_materials': ['kapok', 'bagasse', 'rice hulls', 'wheat straw', 'sunflower hulls']
+    },
+    
+    // PAPER/CELLULOSE - Paper-based materials
+    paper_cellulose: {
+      'paper_products': ['paper', 'cardboard', 'wood pulp'],
+      'specialty_paper': ['tapa cloth', 'kraft paper']
+    },
+    
+    // COMPOSITES/HYBRIDS - Advanced composite materials
+    composites: {
+      'fiber_composites': ['carbon fiber', 'fiberglass', 'kevlar', 'aramid'],
+      'bio_composites': ['bananatex', 'hemp composite'],
+      'engineered_composites': ['composite', 'hybrid material']
+    },
+    
+    // CONSTRUCTION - Building and construction materials
+    construction: {
+      'structural': ['concrete', 'cement', 'brick', 'drywall', 'plaster'],
+      'finishing': ['paint', 'paints', 'water-based paint', 'roofing', 'siding', 'insulation'],
+      'adhesives': ['adhesives', 'glues', 'epoxy']
+    },
+    
+    // CHEMICAL/PROCESSING - Chemical and processing materials
+    chemical: {
+      'processing_agents': ['dyeing agents', 'tanning agents'],
+      'surface_materials': ['linoleum', 'sanding dust']
+    }
   };
   
-  // Check for specific material types first
-  for (const [family, types] of Object.entries(materialFamilies)) {
-    for (const type of types) {
-      if (hint.includes(type) && data[type]) {
-        console.log(`🎯 Found specific ${family} type:`, type);
-        return { material: type, confidence: 95, isSpecific: true };
+  // Check for specific material types across all families
+  for (const [familyName, subcategories] of Object.entries(materialFamilies)) {
+    for (const [subcategoryName, types] of Object.entries(subcategories)) {
+      for (const type of types) {
+        if (hint.includes(type) && data[type]) {
+          console.log(`🎯 Found specific ${familyName} (${subcategoryName}):`, type);
+          return { 
+            material: type, 
+            confidence: 95, 
+            isSpecific: true, 
+            family: familyName,
+            subcategory: subcategoryName 
+          };
+        }
       }
     }
   }
   
-  // Look for compound materials (e.g., "premium leather", "recycled polyester")
+  // Enhanced compound material detection with comprehensive patterns
   const compoundPatterns = [
-    /(premium|genuine|authentic|real)\s+(leather|suede)/,
-    /(recycled|organic|sustainable)\s+(\w+)/,
-    /(vegan|faux|synthetic)\s+(leather|suede)/,
-    /(\w+)\s+(cotton|wool|silk|leather)/
+    // Metal compounds
+    /(stainless|carbon|tool|low-alloy)\s+steel/,
+    /(titanium|nickel|aluminum)\s+(alloy|alloys)/,
+    /(cast|wrought)\s+iron/,
+    
+    // Polymer compounds
+    /(recycled|bio|recovered)\s+(plastic|polymer)/,
+    /(thermoplastic|thermoset)\s+(\w+)/,
+    
+    // Textile compounds
+    /(organic|recycled|sustainable|premium)\s+(cotton|wool|silk|polyester|nylon)/,
+    /(merino|cashmere|alpaca|mohair)\s+wool/,
+    /(genuine|real|authentic|full\s+grain|top\s+grain)\s+(leather)/,
+    /(vegan|faux|synthetic|artificial)\s+(leather|suede)/,
+    /(recycled|organic)\s+(cotton|polyester|wool|nylon)/,
+    
+    // Glass compounds
+    /(tempered|laminated|borosilicate)\s+glass/,
+    /(fiber|fibre)\s+glass/,
+    
+    // Wood compounds
+    /(reclaimed|engineered|solid)\s+(wood|timber)/,
+    /(oriented\s+strand|particle)\s+board/,
+    
+    // Stone compounds
+    /(natural|artificial|engineered)\s+(stone|marble|granite)/,
+    
+    // Ceramic compounds
+    /(technical|advanced|traditional)\s+(ceramic|ceramics)/,
+    
+    // General modifiers
+    /(premium|high-grade|industrial|medical-grade|food-grade)\s+(\w+)/,
+    /(\w+)\s+(fiber|fibre|composite|blend)/
   ];
   
   for (const pattern of compoundPatterns) {
     const match = hint.match(pattern);
     if (match) {
-      const compound = match[0];
+      const compound = match[0].trim();
+      const modifier = match[1];
       const base = match[2] || match[1];
       
       // Check if we have the specific compound material
       if (data[compound]) {
         console.log('🧬 Found compound material:', compound);
-        return { material: compound, confidence: 90, isSpecific: true };
+        return { 
+          material: compound, 
+          confidence: 90, 
+          isSpecific: true,
+          compound: true,
+          modifier: modifier
+        };
       }
+      
+      // Check for close matches in our database
+      const closeMatches = Object.keys(data).filter(key => 
+        key.toLowerCase().includes(compound.toLowerCase()) || 
+        compound.toLowerCase().includes(key.toLowerCase())
+      );
+      
+      if (closeMatches.length > 0) {
+        const bestMatch = closeMatches[0];
+        console.log('🔍 Found close compound match:', compound, '→', bestMatch);
+        return { 
+          material: bestMatch, 
+          confidence: 85, 
+          isSpecific: true,
+          compound: true,
+          originalHint: compound
+        };
+      }
+      
       // Fall back to base material
-      if (data[base]) {
-        console.log('🔄 Using base material for compound:', base);
-        return { material: base, confidence: 75, isSpecific: false };
+      if (base && data[base]) {
+        console.log('🔄 Using base material for compound:', compound, '→', base);
+        return { 
+          material: base, 
+          confidence: 75, 
+          isSpecific: false,
+          compound: true,
+          baseOf: compound
+        };
       }
     }
   }
@@ -149,7 +291,13 @@ window.ecoLookup = async function (title, materialHint) {
           ...data[specificResult.material], 
           name: specificResult.material, 
           confidence: specificResult.confidence,
-          isSpecific: specificResult.isSpecific 
+          isSpecific: specificResult.isSpecific,
+          family: specificResult.family,
+          subcategory: specificResult.subcategory,
+          compound: specificResult.compound,
+          modifier: specificResult.modifier,
+          originalHint: specificResult.originalHint,
+          baseOf: specificResult.baseOf
         };
       }
       
