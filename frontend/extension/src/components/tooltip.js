@@ -2,24 +2,92 @@ function createTooltip(html) {
   const tooltip = document.createElement("div");
   tooltip.className = "eco-tooltip";
   tooltip.innerHTML = html;
+  
+  // Enhanced CSS styles to ensure visibility
+  tooltip.style.cssText = `
+    position: absolute !important;
+    z-index: 10000 !important;
+    background: rgba(0, 0, 0, 0.9) !important;
+    color: white !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-family: Arial, sans-serif !important;
+    line-height: 1.4 !important;
+    max-width: 300px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+    pointer-events: none !important;
+    word-wrap: break-word !important;
+  `;
+  
   document.body.appendChild(tooltip);
+  console.log("🔧 Created tooltip element:", tooltip);
   return tooltip;
 }
 
 function attachTooltipEvents(target, html) {
+  // Prevent duplicate tooltips on the same element
+  if (target.dataset.enhancedTooltipAttached === "true") {
+    console.log("⚠️ Tooltip already attached to element, skipping");
+    return;
+  }
+  target.dataset.enhancedTooltipAttached = "true";
+  
   const tooltip = createTooltip(html);
-  target.style.borderBottom = "2px dotted green";
-  target.addEventListener("mouseenter", () => {
+  target.style.borderBottom = "2px dotted #10b981"; // Better green color
+  
+  // Store tooltip reference on the target for cleanup
+  target._ecoTooltip = tooltip;
+  
+  const mouseEnterHandler = () => {
+    console.log("🟢 Mouse entered tooltip target");
+    
+    // Hide any other visible tooltips first
+    document.querySelectorAll('.eco-tooltip').forEach(t => {
+      if (t !== tooltip) {
+        t.style.opacity = '0';
+      }
+    });
+    
     const rect = target.getBoundingClientRect();
-    tooltip.style.top = `${rect.bottom + window.scrollY + 10}px`;
-    tooltip.style.left = `${rect.left + window.scrollX}px`;
-    tooltip.style.opacity = 1;
-    console.log("🟢 Hovering:", html);
-  });
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    
+    // Better positioning with bounds checking
+    let top = rect.bottom + scrollTop + 10;
+    let left = rect.left + scrollLeft;
+    
+    // Keep tooltip within viewport
+    if (left + 300 > window.innerWidth) {
+      left = window.innerWidth - 320;
+    }
+    if (left < 10) {
+      left = 10;
+    }
+    
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+    tooltip.style.opacity = '1';
+    
+    console.log("🟢 Enhanced tooltip showing at:", { top, left });
+  };
 
-  target.addEventListener("mouseleave", () => {
-    tooltip.style.opacity = 0;
-  });
+  const mouseLeaveHandler = () => {
+    console.log("🔴 Mouse left tooltip target");
+    tooltip.style.opacity = '0';
+  };
+  
+  // Add event listeners with proper cleanup
+  target.addEventListener("mouseenter", mouseEnterHandler, { passive: true });
+  target.addEventListener("mouseleave", mouseLeaveHandler, { passive: true });
+  
+  // Store handlers for potential cleanup
+  target._ecoTooltipHandlers = { mouseEnterHandler, mouseLeaveHandler };
+  
+  console.log("✅ Tooltip events attached to element:", target.textContent.substring(0, 30) + "...");
 }
 
 function extractMaterialFromDetailPage() {
@@ -110,58 +178,85 @@ async function smartGuessMaterialFromTitle(title) {
   // Load material insights to get comprehensive list
   const insights = window.materialInsights || await window.loadMaterialInsights?.() || {};
   
-  // Enhanced category-based guessing with common Amazon product patterns
+  // Enhanced category-based guessing with priority order (most specific first)
   const categoryPatterns = [
-    // Electronics
-    { patterns: ['headphones', 'earbuds', 'earphones'], material: 'plastic' },
-    { patterns: ['phone case', 'case', 'cover', 'protector'], material: 'polycarbonate' },
-    { patterns: ['laptop', 'macbook', 'ultrabook', 'notebook'], material: 'aluminum' },
-    { patterns: ['charger', 'cable', 'adapter'], material: 'plastic' },
-    { patterns: ['speaker', 'soundbar'], material: 'plastic' },
+    // Bags & Backpacks (High Priority - fix aluminum issue)
+    { patterns: ['backpack', 'rucksack', 'hiking backpack', 'travel backpack'], material: 'nylon', priority: 10 },
+    { patterns: ['bag', 'handbag', 'shoulder bag', 'tote bag'], material: 'leather', priority: 9 },
+    { patterns: ['gym bag', 'sports bag', 'duffel bag'], material: 'nylon', priority: 9 },
+    { patterns: ['laptop bag', 'briefcase'], material: 'nylon', priority: 9 },
     
-    // Clothing & Accessories
-    { patterns: ['t-shirt', 'shirt', 'tee'], material: 'cotton' },
-    { patterns: ['jeans', 'denim'], material: 'cotton' },
-    { patterns: ['jacket', 'coat', 'hoodie', 'sweater'], material: 'polyester' },
-    { patterns: ['shoes', 'sneakers', 'trainers', 'boots'], material: 'leather' },
-    { patterns: ['socks'], material: 'cotton' },
-    { patterns: ['watch', 'smartwatch'], material: 'steel' },
-    { patterns: ['sunglasses', 'glasses'], material: 'polycarbonate' },
+    // Textiles & Clothing (High Priority)
+    { patterns: ['t-shirt', 'shirt', 'tee', 'top'], material: 'cotton', priority: 10 },
+    { patterns: ['jeans', 'denim'], material: 'cotton', priority: 10 },
+    { patterns: ['jacket', 'coat', 'hoodie', 'sweater'], material: 'polyester', priority: 9 },
+    { patterns: ['pants', 'trousers', 'leggings'], material: 'cotton', priority: 8 },
+    { patterns: ['dress', 'skirt'], material: 'polyester', priority: 8 },
+    { patterns: ['socks', 'underwear'], material: 'cotton', priority: 9 },
+    { patterns: ['shoes', 'sneakers', 'trainers', 'boots'], material: 'leather', priority: 8 },
+    
+    // Electronics (Medium Priority)
+    { patterns: ['headphones', 'earbuds', 'earphones'], material: 'plastic', priority: 8 },
+    { patterns: ['phone case', 'case', 'cover', 'protector'], material: 'polycarbonate', priority: 9 },
+    { patterns: ['laptop', 'macbook', 'ultrabook', 'notebook computer'], material: 'aluminum', priority: 7 },
+    { patterns: ['charger', 'cable', 'adapter', 'cord'], material: 'plastic', priority: 8 },
+    { patterns: ['speaker', 'soundbar'], material: 'plastic', priority: 7 },
+    { patterns: ['tablet', 'ipad'], material: 'aluminum', priority: 7 },
     
     // Home & Kitchen
-    { patterns: ['bottle', 'flask', 'tumbler', 'thermos'], material: 'steel' },
-    { patterns: ['mug', 'cup'], material: 'ceramic' },
-    { patterns: ['pan', 'pot', 'cookware'], material: 'aluminum' },
-    { patterns: ['cutting board', 'chopping board'], material: 'wood' },
-    { patterns: ['plate', 'bowl', 'dish'], material: 'ceramic' },
-    { patterns: ['curtain', 'drapes'], material: 'polyester' },
-    { patterns: ['towel'], material: 'cotton' },
-    { patterns: ['pillow', 'cushion'], material: 'polyester' },
+    { patterns: ['water bottle', 'bottle', 'flask', 'tumbler'], material: 'steel', priority: 8 },
+    { patterns: ['mug', 'cup', 'glass'], material: 'ceramic', priority: 8 },
+    { patterns: ['pan', 'pot', 'cookware', 'frying pan'], material: 'aluminum', priority: 8 },
+    { patterns: ['cutting board', 'chopping board'], material: 'wood', priority: 9 },
+    { patterns: ['plate', 'bowl', 'dish'], material: 'ceramic', priority: 8 },
+    { patterns: ['curtain', 'drapes'], material: 'polyester', priority: 7 },
+    { patterns: ['towel', 'washcloth'], material: 'cotton', priority: 8 },
+    { patterns: ['pillow', 'cushion'], material: 'polyester', priority: 7 },
+    { patterns: ['blanket', 'throw'], material: 'cotton', priority: 7 },
     
     // Sports & Outdoors
-    { patterns: ['yoga mat', 'exercise mat'], material: 'rubber' },
-    { patterns: ['water bottle'], material: 'plastic' },
-    { patterns: ['backpack', 'bag'], material: 'nylon' },
-    { patterns: ['tent'], material: 'nylon' },
+    { patterns: ['yoga mat', 'exercise mat', 'gym mat'], material: 'rubber', priority: 9 },
+    { patterns: ['tent', 'camping'], material: 'nylon', priority: 8 },
+    { patterns: ['sleeping bag'], material: 'nylon', priority: 8 },
     
     // Tools & Hardware
-    { patterns: ['screwdriver', 'wrench', 'hammer'], material: 'steel' },
-    { patterns: ['drill'], material: 'aluminum' },
+    { patterns: ['screwdriver', 'wrench', 'hammer', 'tool'], material: 'steel', priority: 8 },
+    { patterns: ['drill', 'power tool'], material: 'plastic', priority: 7 },
+    
+    // Accessories
+    { patterns: ['watch', 'smartwatch'], material: 'steel', priority: 7 },
+    { patterns: ['sunglasses', 'glasses'], material: 'polycarbonate', priority: 8 },
+    { patterns: ['wallet', 'purse'], material: 'leather', priority: 8 },
+    { patterns: ['belt'], material: 'leather', priority: 8 },
     
     // Books & Media
-    { patterns: ['book', 'notebook', 'journal'], material: 'paper' },
+    { patterns: ['book', 'paperback', 'hardcover'], material: 'paper', priority: 9 },
+    { patterns: ['notebook', 'journal', 'diary'], material: 'paper', priority: 8 },
     
     // Beauty & Personal Care
-    { patterns: ['brush', 'comb'], material: 'plastic' },
-    { patterns: ['mirror'], material: 'glass' }
+    { patterns: ['brush', 'comb'], material: 'plastic', priority: 7 },
+    { patterns: ['mirror'], material: 'glass', priority: 8 }
   ];
   
-  // Check category patterns first
+  // Check category patterns with priority (highest priority first)
+  let bestMatch = null;
+  let highestPriority = 0;
+  
   for (const category of categoryPatterns) {
-    if (category.patterns.some(pattern => titleLower.includes(pattern))) {
-      console.log("🎯 Category-based material guess:", category.material);
-      return category.material;
+    const matchedPattern = category.patterns.find(pattern => titleLower.includes(pattern));
+    if (matchedPattern && category.priority > highestPriority) {
+      bestMatch = {
+        material: category.material,
+        pattern: matchedPattern,
+        priority: category.priority
+      };
+      highestPriority = category.priority;
     }
+  }
+  
+  if (bestMatch) {
+    console.log("🎯 Category-based material guess:", bestMatch.material, `(priority: ${bestMatch.priority}, pattern: "${bestMatch.pattern}")`);
+    return bestMatch.material;
   }
   
   // Check for direct material mentions in title
@@ -205,9 +300,9 @@ function showTooltipFor(target, info) {
     return;
   }
 
-  // Only show tooltips with reasonable confidence
-  const confidence = info.confidence || 75;
-  if (confidence < 45) {
+  // Only show tooltips with reasonable confidence (lowered threshold for better coverage)
+  const confidence = info.confidence || 70;
+  if (confidence < 35) {
     console.warn("⚠️ Skipping tooltip — confidence too low:", confidence);
     return;
   }
@@ -249,7 +344,21 @@ function showTooltipFor(target, info) {
 }
 
 async function enhanceTooltips() {
-  console.log("✅ Tooltip script running");
+  console.log("✅ Enhanced tooltip script running");
+  
+  // Clean up any old tooltips that might be left over
+  const oldTooltips = document.querySelectorAll('.eco-tooltip');
+  oldTooltips.forEach(tooltip => {
+    if (tooltip.style.opacity === '0' || !tooltip.style.opacity) {
+      tooltip.remove();
+    }
+  });
+  
+  // Remove old tooltip indicators (dotted borders)
+  const oldIndicators = document.querySelectorAll('[style*="border-bottom: 2px dotted green"]');
+  oldIndicators.forEach(el => {
+    el.style.borderBottom = '';
+  });
   
   // Ensure material insights are loaded
   if (!window.materialInsights) {
@@ -386,6 +495,7 @@ async function enhanceTooltips() {
       return text.length > 10 && 
              text.length < 200 && 
              !el.dataset.tooltipAttached &&
+             !el.dataset.enhancedTooltipAttached && // Prevent duplicates from enhanced system
              // Remove duplicates based on text content
              arr.findIndex(other => other.textContent.trim() === text) === index &&
              // Exclude navigation and UI elements

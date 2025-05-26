@@ -1,13 +1,9 @@
 // tooltip.js — Cursor-following eco tooltip
 
+// ⚠️ LEGACY createFloatingTooltip - DISABLED
 function createFloatingTooltip() {
-  const tooltip = document.createElement("div");
-  tooltip.className = "eco-tooltip";
-  tooltip.style.position = "absolute";
-  tooltip.style.pointerEvents = "none";
-  tooltip.style.opacity = 0;
-  document.body.appendChild(tooltip);
-  return tooltip;
+  console.log("⚠️ Legacy createFloatingTooltip() called but DISABLED");
+  return null;
 }
 
 function guessMaterialFromCategory(title) {
@@ -37,54 +33,14 @@ window.loadMaterialInsights = async function () {
   }
 };
 
+// ⚠️ LEGACY enhanceTooltips function - DISABLED
+// This has been moved to /src/components/tooltip.js with major improvements
+// Keeping this file only for the ecoLookup function and utilities
+
 async function enhanceTooltips() {
-  const products = document.querySelectorAll("h2.a-size-mini a.a-link-normal");
-  if (!products.length) return;
-
-  const tooltip = createFloatingTooltip();
-  const insights = await window.loadMaterialInsights();
-
-  products.forEach((el) => {
-    const title = el.textContent.toLowerCase();
-
-    let matched = null;
-    for (const key in insights) {
-      const regex = new RegExp(`\\b${key}\\b`, "i");
-      if (regex.test(title)) {
-        matched = { ...insights[key], name: key };
-        break;
-      }
-    }
-
-    if (!matched) return;
-
-    el.addEventListener("mousemove", (e) => {
-      tooltip.style.left = `${e.pageX + 15}px`;
-      tooltip.style.top = `${e.pageY + 10}px`;
-      const confidence = matched.confidence || 75;
-
-      tooltip.innerHTML = `
-        <div><strong>🧬 Material: ${matched.name || "Unknown"}</strong></div>
-        <div><strong>${matched.impact || "Eco Score"}</strong></div>
-        <div>${matched.summary || "No summary available."}</div>
-        <div>${matched.recyclable === true ? "♻️ Recyclable" : matched.recyclable === false ? "🚯 Not recyclable" : ""}</div>
-        <div style="margin-top: 6px;">
-          <div style="font-size: 12px; margin-bottom: 2px;">Confidence:</div>
-          <div style="height: 6px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
-            <div style="width: ${confidence}%; background: #4ade80; height: 100%;"></div>
-          </div>
-        </div>
-        <div style="margin-top: 8px;">
-          <a href="https://yourdomain.com/insights" target="_blank" style="font-size: 12px; color: #2563eb;">Learn more ↗</a>
-        </div>
-      `;
-      tooltip.style.opacity = 1;
-    });
-
-    el.addEventListener("mouseleave", () => {
-      tooltip.style.opacity = 0;
-    });
-  });
+  // DISABLED - Using enhanced tooltip.js implementation instead
+  console.log("⚠️ Legacy enhanceTooltips() called but DISABLED - using enhanced tooltip.js instead");
+  return;
 }
 
 window.ecoLookup = async function (title, materialHint) {
