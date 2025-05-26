@@ -45,6 +45,78 @@ async function enhanceTooltips() {
   return;
 }
 
+// Enhanced material type detection function
+function detectSpecificMaterialType(materialHint, data) {
+  if (!materialHint) return null;
+  
+  const hint = materialHint.toLowerCase();
+  
+  // Define material families and their specific types
+  const materialFamilies = {
+    leather: [
+      'genuine leather', 'real leather', 'full grain leather', 'top grain leather',
+      'suede', 'nubuck', 'patent leather', 'vegan leather', 'faux leather', 
+      'synthetic leather', 'mushroom leather', 'apple leather', 'grape leather',
+      'cactus leather', 'palm leather', 'recycled leather'
+    ],
+    plastic: [
+      'abs', 'pvc', 'polycarbonate', 'polyethylene', 'polypropylene', 
+      'polystyrene', 'polyurethane', 'bioplastic', 'recycled plastic',
+      'recovered plastic', 'biodegradable plastic'
+    ],
+    cotton: [
+      'organic cotton', 'recycled cotton', 'pima cotton', 'egyptian cotton',
+      'cotton blend', 'cotton canvas', 'cotton denim', 'cotton jersey'
+    ],
+    wool: [
+      'merino wool', 'cashmere', 'alpaca', 'mohair', 'angora', 
+      'recycled wool', 'organic wool'
+    ],
+    silk: [
+      'mulberry silk', 'wild silk', 'organic silk', 'peace silk'
+    ]
+  };
+  
+  // Check for specific material types first
+  for (const [family, types] of Object.entries(materialFamilies)) {
+    for (const type of types) {
+      if (hint.includes(type) && data[type]) {
+        console.log(`🎯 Found specific ${family} type:`, type);
+        return { material: type, confidence: 95, isSpecific: true };
+      }
+    }
+  }
+  
+  // Look for compound materials (e.g., "premium leather", "recycled polyester")
+  const compoundPatterns = [
+    /(premium|genuine|authentic|real)\s+(leather|suede)/,
+    /(recycled|organic|sustainable)\s+(\w+)/,
+    /(vegan|faux|synthetic)\s+(leather|suede)/,
+    /(\w+)\s+(cotton|wool|silk|leather)/
+  ];
+  
+  for (const pattern of compoundPatterns) {
+    const match = hint.match(pattern);
+    if (match) {
+      const compound = match[0];
+      const base = match[2] || match[1];
+      
+      // Check if we have the specific compound material
+      if (data[compound]) {
+        console.log('🧬 Found compound material:', compound);
+        return { material: compound, confidence: 90, isSpecific: true };
+      }
+      // Fall back to base material
+      if (data[base]) {
+        console.log('🔄 Using base material for compound:', base);
+        return { material: base, confidence: 75, isSpecific: false };
+      }
+    }
+  }
+  
+  return null;
+}
+
 window.ecoLookup = async function (title, materialHint) {
   try {
     // Use cached data if available
@@ -69,9 +141,19 @@ window.ecoLookup = async function (title, materialHint) {
     console.log("🔍 Looking up title:", title.substring(0, 50) + "...");
     if (materialHint) console.log("🧪 Material hint:", materialHint);
 
-    // Priority 1: Exact match from materialHint with fallback mapping
+    // Priority 1: Try to detect specific material type first
     if (materialHint && materialHint !== "unknown") {
-      // First try exact match
+      const specificResult = detectSpecificMaterialType(materialHint, data);
+      if (specificResult) {
+        return { 
+          ...data[specificResult.material], 
+          name: specificResult.material, 
+          confidence: specificResult.confidence,
+          isSpecific: specificResult.isSpecific 
+        };
+      }
+      
+      // Enhanced exact matching
       for (const key in data) {
         if (materialHint.includes(key.toLowerCase()) || key.toLowerCase().includes(materialHint)) {
           console.log("✅ Matched from material hint:", key);
@@ -79,18 +161,23 @@ window.ecoLookup = async function (title, materialHint) {
         }
       }
       
-      // Fallback mapping for common mismatches
+      // Enhanced fallback mapping for common mismatches
       const materialFallbacks = {
         'polycarbonate': 'plastics',
         'plastic': 'plastics', 
-        'pvc': 'plastics',
-        'abs': 'plastics',
+        'pvc': 'pvc',
+        'abs': 'abs',
+        'polyethylene': 'polyethylene',
+        'polypropylene': 'polypropylene',
         'metal': 'steel',
         'metallic': 'aluminum',
         'wood': 'timber',
         'fabric': 'cotton',
         'cloth': 'cotton',
-        'synthetic': 'polyester'
+        'synthetic': 'polyester',
+        'genuine': 'leather',
+        'real leather': 'leather',
+        'suede': 'leather'
       };
       
       const fallback = materialFallbacks[materialHint.toLowerCase()];
