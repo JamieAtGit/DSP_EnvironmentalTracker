@@ -1,3 +1,45 @@
+// Smart cleanup function - only cleans up broken/orphaned tooltips
+function cleanupBrokenTooltips() {
+  console.log("🧹 Cleaning up broken tooltips");
+  
+  // Find and clean up elements that have the flag but no working handlers
+  const enhancedElements = document.querySelectorAll('[data-enhanced-tooltip-attached="true"]');
+  enhancedElements.forEach(el => {
+    // Check if element still exists in DOM and has working handlers
+    if (!document.contains(el) || (!el._ecoTooltip && !el._ecoTooltipHandlers)) {
+      // Element is orphaned or broken - clean it up
+      if (el._ecoTooltip) {
+        el._ecoTooltip.remove();
+        el._ecoTooltip = null;
+      }
+      if (el._ecoTooltipHandlers) {
+        el.removeEventListener("mouseenter", el._ecoTooltipHandlers.mouseEnterHandler);
+        el.removeEventListener("mouseleave", el._ecoTooltipHandlers.mouseLeaveHandler);
+        if (el._ecoTooltipHandlers.mouseMoveHandler) {
+          el.removeEventListener("mousemove", el._ecoTooltipHandlers.mouseMoveHandler);
+        }
+        el._ecoTooltipHandlers = null;
+      }
+      el.style.borderBottom = '';
+      el.dataset.enhancedTooltipAttached = "false";
+    }
+  });
+  
+  // Remove orphaned tooltip elements
+  const orphanedTooltips = document.querySelectorAll('.eco-tooltip');
+  orphanedTooltips.forEach(tooltip => {
+    let isAttached = false;
+    enhancedElements.forEach(el => {
+      if (el._ecoTooltip === tooltip) {
+        isAttached = true;
+      }
+    });
+    if (!isAttached) {
+      tooltip.remove();
+    }
+  });
+}
+
 function createTooltip(html) {
   const tooltip = document.createElement("div");
   tooltip.className = "eco-tooltip";
@@ -29,11 +71,26 @@ function createTooltip(html) {
 }
 
 function attachTooltipEvents(target, html) {
-  // Prevent duplicate tooltips on the same element
-  if (target.dataset.enhancedTooltipAttached === "true") {
-    console.log("⚠️ Tooltip already attached to element, skipping");
+  // Check if tooltip is already properly attached and working
+  if (target.dataset.enhancedTooltipAttached === "true" && target._ecoTooltip && target._ecoTooltipHandlers) {
+    console.log("✅ Tooltip already working on element, skipping");
     return;
   }
+  
+  // Clean up any existing broken tooltip and handlers first
+  if (target._ecoTooltip) {
+    target._ecoTooltip.remove();
+    target._ecoTooltip = null;
+  }
+  if (target._ecoTooltipHandlers) {
+    target.removeEventListener("mouseenter", target._ecoTooltipHandlers.mouseEnterHandler);
+    target.removeEventListener("mouseleave", target._ecoTooltipHandlers.mouseLeaveHandler);
+    if (target._ecoTooltipHandlers.mouseMoveHandler) {
+      target.removeEventListener("mousemove", target._ecoTooltipHandlers.mouseMoveHandler);
+    }
+    target._ecoTooltipHandlers = null;
+  }
+  
   target.dataset.enhancedTooltipAttached = "true";
   
   const tooltip = createTooltip(html);
@@ -45,10 +102,15 @@ function attachTooltipEvents(target, html) {
   const mouseEnterHandler = () => {
     console.log("🟢 Mouse entered tooltip target");
     
-    // Hide any other visible tooltips first
+    // Hide other visible tooltips (but don't affect their event handlers)
     document.querySelectorAll('.eco-tooltip').forEach(t => {
-      if (t !== tooltip) {
+      if (t !== tooltip && t.style.opacity === '1') {
         t.style.opacity = '0';
+        setTimeout(() => {
+          if (t.style.opacity === '0') {
+            t.style.display = 'none';
+          }
+        }, 150);
       }
     });
     
@@ -68,9 +130,12 @@ function attachTooltipEvents(target, html) {
       left = 10;
     }
     
+    // Ensure tooltip is positioned and visible
     tooltip.style.top = `${top}px`;
     tooltip.style.left = `${left}px`;
+    tooltip.style.display = 'block';
     tooltip.style.opacity = '1';
+    tooltip.style.pointerEvents = 'none';
     
     console.log("🟢 Enhanced tooltip showing at:", { top, left });
   };
@@ -78,14 +143,44 @@ function attachTooltipEvents(target, html) {
   const mouseLeaveHandler = () => {
     console.log("🔴 Mouse left tooltip target");
     tooltip.style.opacity = '0';
+    // Small delay before hiding to prevent flicker
+    setTimeout(() => {
+      if (tooltip.style.opacity === '0') {
+        tooltip.style.display = 'none';
+      }
+    }, 150);
   };
   
   // Add event listeners with proper cleanup
   target.addEventListener("mouseenter", mouseEnterHandler, { passive: true });
   target.addEventListener("mouseleave", mouseLeaveHandler, { passive: true });
   
+  // Also handle mouse movement for better responsiveness
+  const mouseMoveHandler = (e) => {
+    if (tooltip.style.opacity === '1') {
+      const rect = target.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+      
+      let top = rect.bottom + scrollTop + 10;
+      let left = rect.left + scrollLeft;
+      
+      if (left + 300 > window.innerWidth) {
+        left = window.innerWidth - 320;
+      }
+      if (left < 10) {
+        left = 10;
+      }
+      
+      tooltip.style.top = `${top}px`;
+      tooltip.style.left = `${left}px`;
+    }
+  };
+  
+  target.addEventListener("mousemove", mouseMoveHandler, { passive: true });
+  
   // Store handlers for potential cleanup
-  target._ecoTooltipHandlers = { mouseEnterHandler, mouseLeaveHandler };
+  target._ecoTooltipHandlers = { mouseEnterHandler, mouseLeaveHandler, mouseMoveHandler };
   
   console.log("✅ Tooltip events attached to element:", target.textContent.substring(0, 30) + "...");
 }
@@ -180,11 +275,12 @@ async function smartGuessMaterialFromTitle(title) {
   
   // Enhanced category-based guessing with priority order (most specific first)
   const categoryPatterns = [
-    // Bags & Backpacks (High Priority - fix aluminum issue)
-    { patterns: ['backpack', 'rucksack', 'hiking backpack', 'travel backpack'], material: 'nylon', priority: 10 },
+    // Bags & Backpacks (High Priority - prioritize nylon over aluminum)
+    { patterns: ['backpack', 'rucksack', 'hiking backpack', 'travel backpack', 'daypack'], material: 'nylon', priority: 15 },
+    { patterns: ['gym bag', 'sports bag', 'duffel bag', 'duffle bag'], material: 'nylon', priority: 14 },
+    { patterns: ['laptop bag', 'briefcase', 'computer bag'], material: 'nylon', priority: 13 },
+    { patterns: ['hiking pack', 'climbing pack', 'outdoor pack'], material: 'nylon', priority: 14 },
     { patterns: ['bag', 'handbag', 'shoulder bag', 'tote bag'], material: 'leather', priority: 9 },
-    { patterns: ['gym bag', 'sports bag', 'duffel bag'], material: 'nylon', priority: 9 },
-    { patterns: ['laptop bag', 'briefcase'], material: 'nylon', priority: 9 },
     
     // Textiles & Clothing (High Priority)
     { patterns: ['t-shirt', 'shirt', 'tee', 'top'], material: 'cotton', priority: 10 },
@@ -195,12 +291,12 @@ async function smartGuessMaterialFromTitle(title) {
     { patterns: ['socks', 'underwear'], material: 'cotton', priority: 9 },
     { patterns: ['shoes', 'sneakers', 'trainers', 'boots'], material: 'leather', priority: 8 },
     
-    // Electronics (Medium Priority)
-    { patterns: ['headphones', 'earbuds', 'earphones'], material: 'plastic', priority: 8 },
-    { patterns: ['phone case', 'case', 'cover', 'protector'], material: 'polycarbonate', priority: 9 },
+    // Electronics (Medium Priority) 
+    { patterns: ['headphones', 'earbuds', 'earphones'], material: 'plastics', priority: 8 },
+    { patterns: ['phone case', 'case', 'cover', 'protector'], material: 'plastics', priority: 9 },
     { patterns: ['laptop', 'macbook', 'ultrabook', 'notebook computer'], material: 'aluminum', priority: 7 },
-    { patterns: ['charger', 'cable', 'adapter', 'cord'], material: 'plastic', priority: 8 },
-    { patterns: ['speaker', 'soundbar'], material: 'plastic', priority: 7 },
+    { patterns: ['charger', 'cable', 'adapter', 'cord'], material: 'plastics', priority: 8 },
+    { patterns: ['speaker', 'soundbar'], material: 'plastics', priority: 7 },
     { patterns: ['tablet', 'ipad'], material: 'aluminum', priority: 7 },
     
     // Home & Kitchen
@@ -221,11 +317,11 @@ async function smartGuessMaterialFromTitle(title) {
     
     // Tools & Hardware
     { patterns: ['screwdriver', 'wrench', 'hammer', 'tool'], material: 'steel', priority: 8 },
-    { patterns: ['drill', 'power tool'], material: 'plastic', priority: 7 },
+    { patterns: ['drill', 'power tool'], material: 'plastics', priority: 7 },
     
     // Accessories
     { patterns: ['watch', 'smartwatch'], material: 'steel', priority: 7 },
-    { patterns: ['sunglasses', 'glasses'], material: 'polycarbonate', priority: 8 },
+    { patterns: ['sunglasses', 'glasses'], material: 'plastics', priority: 8 },
     { patterns: ['wallet', 'purse'], material: 'leather', priority: 8 },
     { patterns: ['belt'], material: 'leather', priority: 8 },
     
@@ -234,7 +330,7 @@ async function smartGuessMaterialFromTitle(title) {
     { patterns: ['notebook', 'journal', 'diary'], material: 'paper', priority: 8 },
     
     // Beauty & Personal Care
-    { patterns: ['brush', 'comb'], material: 'plastic', priority: 7 },
+    { patterns: ['brush', 'comb'], material: 'plastics', priority: 7 },
     { patterns: ['mirror'], material: 'glass', priority: 8 }
   ];
   
@@ -270,9 +366,9 @@ async function smartGuessMaterialFromTitle(title) {
   
   // Check for common material descriptors
   const materialDescriptors = [
-    { patterns: ['wooden', 'wood'], material: 'wood' },
+    { patterns: ['wooden', 'wood'], material: 'timber' },
     { patterns: ['metal', 'metallic'], material: 'steel' },
-    { patterns: ['plastic'], material: 'plastic' },
+    { patterns: ['plastic'], material: 'plastics' },
     { patterns: ['glass'], material: 'glass' },
     { patterns: ['ceramic'], material: 'ceramic' },
     { patterns: ['rubber'], material: 'rubber' },
@@ -302,7 +398,7 @@ function showTooltipFor(target, info) {
 
   // Only show tooltips with reasonable confidence (lowered threshold for better coverage)
   const confidence = info.confidence || 70;
-  if (confidence < 35) {
+  if (confidence < 25) {
     console.warn("⚠️ Skipping tooltip — confidence too low:", confidence);
     return;
   }
@@ -346,19 +442,25 @@ function showTooltipFor(target, info) {
 async function enhanceTooltips() {
   console.log("✅ Enhanced tooltip script running");
   
-  // Clean up any old tooltips that might be left over
-  const oldTooltips = document.querySelectorAll('.eco-tooltip');
-  oldTooltips.forEach(tooltip => {
-    if (tooltip.style.opacity === '0' || !tooltip.style.opacity) {
+  // Only clean up orphaned tooltips (not attached to any element)
+  const allTooltips = document.querySelectorAll('.eco-tooltip');
+  const attachedTooltips = new Set();
+  
+  // Find tooltips that are still attached to elements
+  document.querySelectorAll('[data-enhanced-tooltip-attached="true"]').forEach(el => {
+    if (el._ecoTooltip) {
+      attachedTooltips.add(el._ecoTooltip);
+    }
+  });
+  
+  // Remove only orphaned tooltips
+  allTooltips.forEach(tooltip => {
+    if (!attachedTooltips.has(tooltip)) {
       tooltip.remove();
     }
   });
   
-  // Remove old tooltip indicators (dotted borders)
-  const oldIndicators = document.querySelectorAll('[style*="border-bottom: 2px dotted green"]');
-  oldIndicators.forEach(el => {
-    el.style.borderBottom = '';
-  });
+  // Don't clean up working tooltips - only fix broken ones in attachTooltipEvents
   
   // Ensure material insights are loaded
   if (!window.materialInsights) {
@@ -495,13 +597,14 @@ async function enhanceTooltips() {
       return text.length > 10 && 
              text.length < 200 && 
              !el.dataset.tooltipAttached &&
-             !el.dataset.enhancedTooltipAttached && // Prevent duplicates from enhanced system
+             el.dataset.enhancedTooltipAttached !== "true" && // Prevent duplicates from enhanced system
              // Remove duplicates based on text content
              arr.findIndex(other => other.textContent.trim() === text) === index &&
              // Exclude navigation and UI elements
              !text.toLowerCase().includes('see more') &&
              !text.toLowerCase().includes('view details') &&
-             !text.toLowerCase().includes('add to cart');
+             !text.toLowerCase().includes('add to cart') &&
+             !text.toLowerCase().includes('check each product page');
     });
     
     console.log("✅ Product tiles found:", tiles.length);
@@ -529,13 +632,36 @@ async function enhanceTooltips() {
 // ⏱️ Improved debounced observer to prevent overload
 let lastEnhanceRun = 0;
 let enhanceTimeout = null;
-const DEBOUNCE_MS = 2000; // Reduced for more responsiveness
+let isEnhancing = false;
+const DEBOUNCE_MS = 1500; // Reduced for more responsiveness
+const MIN_INTERVAL_MS = 500; // Minimum time between enhancements
 
 function debouncedEnhanceTooltips() {
   const now = Date.now();
+  
+  // Don't run if already enhancing
+  if (isEnhancing) {
+    console.log("⏳ Enhancement already in progress, skipping");
+    return;
+  }
+  
+  // Don't run too frequently
+  if (now - lastEnhanceRun < MIN_INTERVAL_MS) {
+    if (enhanceTimeout) {
+      clearTimeout(enhanceTimeout);
+    }
+    enhanceTimeout = setTimeout(() => {
+      debouncedEnhanceTooltips();
+    }, MIN_INTERVAL_MS - (now - lastEnhanceRun));
+    return;
+  }
+  
   if (now - lastEnhanceRun > DEBOUNCE_MS) {
     lastEnhanceRun = now;
-    enhanceTooltips().catch(console.error);
+    isEnhancing = true;
+    enhanceTooltips().catch(console.error).finally(() => {
+      isEnhancing = false;
+    });
   } else {
     // Clear existing timeout and set a new one
     if (enhanceTimeout) {
@@ -543,15 +669,43 @@ function debouncedEnhanceTooltips() {
     }
     enhanceTimeout = setTimeout(() => {
       lastEnhanceRun = Date.now();
-      enhanceTooltips().catch(console.error);
+      isEnhancing = true;
+      enhanceTooltips().catch(console.error).finally(() => {
+        isEnhancing = false;
+      });
     }, DEBOUNCE_MS);
   }
 }
 
+// Smart initialization without aggressive cleanup
+let pageInitialized = false;
+
+// Cleanup broken tooltips on page unload
+window.addEventListener("beforeunload", cleanupBrokenTooltips);
+
 // Initialize on page load
 window.addEventListener("load", () => {
-  setTimeout(debouncedEnhanceTooltips, 1000);
+  if (!pageInitialized) {
+    pageInitialized = true;
+    cleanupBrokenTooltips();
+    setTimeout(debouncedEnhanceTooltips, 1000);
+  }
 });
+
+// Also initialize on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!pageInitialized) {
+      pageInitialized = true;
+      cleanupBrokenTooltips();
+      setTimeout(debouncedEnhanceTooltips, 500);
+    }
+  });
+} else if (!pageInitialized) {
+  pageInitialized = true;
+  cleanupBrokenTooltips();
+  debouncedEnhanceTooltips();
+}
 
 // Monitor for dynamic content changes (common on Amazon)
 const observer = new MutationObserver((mutations) => {

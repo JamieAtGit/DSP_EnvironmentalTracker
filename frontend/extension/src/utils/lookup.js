@@ -8,12 +8,14 @@ function createFloatingTooltip() {
 
 function guessMaterialFromCategory(title) {
   const lower = title.toLowerCase();
-  if (lower.includes("headphones") || lower.includes("earbuds")) return "plastic";
-  if (lower.includes("phone case") || lower.includes("cover")) return "polycarbonate";
+  if (lower.includes("headphones") || lower.includes("earbuds")) return "plastics";
+  if (lower.includes("phone case") || lower.includes("cover")) return "plastics";
   if (lower.includes("laptop") || lower.includes("notebook")) return "aluminum";
   if (lower.includes("bottle") || lower.includes("thermos")) return "steel";
   if (lower.includes("jacket") || lower.includes("coat")) return "polyester";
   if (lower.includes("shoes") || lower.includes("trainers")) return "rubber";
+  if (lower.includes("backpack") || lower.includes("rucksack") || lower.includes("hiking")) return "nylon";
+  if (lower.includes("bag") && !lower.includes("sleeping")) return "nylon";
   return null;
 }
 
@@ -67,13 +69,34 @@ window.ecoLookup = async function (title, materialHint) {
     console.log("🔍 Looking up title:", title.substring(0, 50) + "...");
     if (materialHint) console.log("🧪 Material hint:", materialHint);
 
-    // Priority 1: Exact match from materialHint
+    // Priority 1: Exact match from materialHint with fallback mapping
     if (materialHint && materialHint !== "unknown") {
+      // First try exact match
       for (const key in data) {
         if (materialHint.includes(key.toLowerCase()) || key.toLowerCase().includes(materialHint)) {
           console.log("✅ Matched from material hint:", key);
           return { ...data[key], name: key, confidence: 95 };
         }
+      }
+      
+      // Fallback mapping for common mismatches
+      const materialFallbacks = {
+        'polycarbonate': 'plastics',
+        'plastic': 'plastics', 
+        'pvc': 'plastics',
+        'abs': 'plastics',
+        'metal': 'steel',
+        'metallic': 'aluminum',
+        'wood': 'timber',
+        'fabric': 'cotton',
+        'cloth': 'cotton',
+        'synthetic': 'polyester'
+      };
+      
+      const fallback = materialFallbacks[materialHint.toLowerCase()];
+      if (fallback && data[fallback]) {
+        console.log("🔄 Using fallback mapping:", materialHint, "→", fallback);
+        return { ...data[fallback], name: fallback, confidence: 85 };
       }
     }
 
@@ -116,12 +139,26 @@ window.ecoLookup = async function (title, materialHint) {
       return { ...data[fallback], name: fallback, confidence: 60 };
     }
 
-    // Priority 4: Look for common material descriptors in title
-    const commonMaterials = ['plastic', 'metal', 'wood', 'steel', 'aluminum', 'glass', 'ceramic', 'rubber', 'leather', 'cotton', 'polyester'];
-    for (const material of commonMaterials) {
-      if (title.includes(material) && data[material]) {
-        console.log("🎯 Found common material in title:", material);
-        return { ...data[material], name: material, confidence: 50 };
+    // Priority 4: Look for common material descriptors in title with proper mapping
+    const commonMaterials = [
+      { search: 'plastic', material: 'plastics' },
+      { search: 'metal', material: 'steel' },
+      { search: 'wood', material: 'timber' },
+      { search: 'steel', material: 'steel' },
+      { search: 'aluminum', material: 'aluminum' },
+      { search: 'glass', material: 'glass' },
+      { search: 'ceramic', material: 'ceramic' },
+      { search: 'rubber', material: 'rubber' },
+      { search: 'leather', material: 'leather' },
+      { search: 'cotton', material: 'cotton' },
+      { search: 'polyester', material: 'polyester' },
+      { search: 'nylon', material: 'nylon' }
+    ];
+    
+    for (const item of commonMaterials) {
+      if (title.includes(item.search) && data[item.material]) {
+        console.log("🎯 Found common material in title:", item.material);
+        return { ...data[item.material], name: item.material, confidence: 50 };
       }
     }
 
