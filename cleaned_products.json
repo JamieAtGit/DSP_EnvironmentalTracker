@@ -1784,5 +1784,67 @@
       "material_source": "category_guess",
       "material_confidence": "unknown"
     }
+  },
+  {
+    "asin": "B09QBSXBR8",
+    "title": "Mountain Warehouse Vic Laptop Bag - 30L Backpack, Durable Daypack, Laptop Compartment Rucksack",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9196.1,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 1.05,
+    "raw_product_weight_kg": 1.0,
+    "dimensions_cm": null,
+    "material_type": "Plastic",
+    "co2_emissions": 2.5,
+    "recyclability": "Medium",
+    "recyclability_percentage": 55,
+    "recyclability_description": "Recyclability varies by plastic type (1-7)",
+    "transport_mode": "Ship",
+    "confidence": "Estimated",
+    "materials": {
+      "primary_material": "Plastic",
+      "all_materials": [],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "generic_default",
+      "weight_confidence": "low",
+      "material_source": "text_blob_match_low_priority",
+      "material_confidence": "unknown"
+    }
+  },
+  {
+    "asin": "B08H7VNC8S",
+    "title": "MOUNTAINTOP 40L Hiking Backpacks Trekking Rucksack with Rain Cover Light Daypacks for Travel Camping Climbing Mountaineer Outdoor Sport",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9196.1,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 1.1,
+    "raw_product_weight_kg": 1.05,
+    "dimensions_cm": "35 x 24.99 x 54.99 cm",
+    "material_type": "Fabric",
+    "co2_emissions": 2.1,
+    "recyclability": "Medium",
+    "recyclability_percentage": 35,
+    "recyclability_description": "Textile recycling programs expanding",
+    "transport_mode": "Ship",
+    "confidence": "Estimated",
+    "materials": {
+      "primary_material": "Fabric",
+      "all_materials": [],
+      "material_count": 1
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "none",
+      "weight_confidence": "unknown",
+      "material_source": "text_blob_match_low_priority",
+      "material_confidence": "unknown"
+    }
   }
 ]

@@ -169,34 +169,53 @@ except FileNotFoundError:
     Log.warn("brand_origins.csv not found. Defaulting to heuristic mapping.")
 
 
+# 🌍 GLOBAL MANUFACTURING AND DISTRIBUTION HUBS
+# Expanded with major manufacturing centers and regions for accurate distance calculations
 origin_hubs = {
-    "China": {"lat": 31.2304, "lon": 121.4737, "city": "Shanghai"},
-    "Germany": {"lat": 50.1109, "lon": 8.6821, "city": "Frankfurt"},
-    "USA": {"lat": 37.7749, "lon": -122.4194, "city": "San Francisco"},
-    "Japan": {"lat": 35.6895, "lon": 139.6917, "city": "Tokyo"},
-    "UK": {"lat": 51.509865, "lon": -0.118092, "city": "London"},
-    "Italy": {"city": "Castel San Giovanni", "lat": 45.0667, "lon": 9.4167},
-    "India": {"lat": 28.6139, "lon": 77.2090, "city": "New Delhi"},
-    "South Korea": {"lat": 37.5665, "lon": 126.9780, "city": "Seoul"},
-    "Spain": {"lat": 40.4168, "lon": -3.7038, "city": "Madrid"},
-    "Poland": {"lat": 52.2297, "lon": 21.0122, "city": "Warsaw"},
-    "Netherlands": {"lat": 52.3676, "lon": 4.9041, "city": "Amsterdam"},
-    "Indonesia": {"lat": -6.2088, "lon": 106.8456, "city": "Jakarta"},
-    "France": {"lat": 48.8566, "lon": 2.3522, "city": "Paris"},
-    "Ireland": {"lat": 53.3498, "lon": -6.2603, "city": "Dublin"},
-    "Canada": {"lat": 45.4215, "lon": -75.6972, "city": "Ottawa"},
-    "Switzerland": {"lat": 46.9480, "lon": 7.4474, "city": "Bern"},
-    "Australia": {"lat": -33.8688, "lon": 151.2093, "city": "Sydney"},
-    "Sweden": {"lat": 59.3293, "lon": 18.0686, "city": "Stockholm"},
-    "Finland": {"lat": 60.1699, "lon": 24.9384, "city": "Helsinki"},
-    "Mexico": {"lat": 19.4326, "lon": -99.1332, "city": "Mexico City"},
-    "Belgium": {"lat": 50.8503, "lon": 4.3517, "city": "Brussels"},
-    "Denmark": {"lat": 55.6761, "lon": 12.5683, "city": "Copenhagen"},
-    "Norway": {"lat": 59.9139, "lon": 10.7522, "city": "Oslo"},
-    "Thailand": {"lat": 13.7563, "lon": 100.5018, "city": "Bangkok"},
-    "Vietnam": {"lat": 21.0285, "lon": 105.8542, "city": "Hanoi"},
-    "Turkey": {"lat": 39.9334, "lon": 32.8597, "city": "Ankara"},
-    "Brazil": {"lat": -23.5505, "lon": -46.6333, "city": "Sao Paulo"},
+    # 🌏 Asia-Pacific
+    "China": {"lat": 31.2304, "lon": 121.4737, "city": "Shanghai", "region": "Asia"},
+    "Japan": {"lat": 35.6895, "lon": 139.6917, "city": "Tokyo", "region": "Asia"},
+    "South Korea": {"lat": 37.5665, "lon": 126.9780, "city": "Seoul", "region": "Asia"},
+    "India": {"lat": 19.0760, "lon": 72.8777, "city": "Mumbai", "region": "Asia"},
+    "Vietnam": {"lat": 10.8231, "lon": 106.6297, "city": "Ho Chi Minh City", "region": "Asia"},
+    "Thailand": {"lat": 13.7563, "lon": 100.5018, "city": "Bangkok", "region": "Asia"},
+    "Indonesia": {"lat": -6.2088, "lon": 106.8456, "city": "Jakarta", "region": "Asia"},
+    "Malaysia": {"lat": 3.1390, "lon": 101.6869, "city": "Kuala Lumpur", "region": "Asia"},
+    "Singapore": {"lat": 1.3521, "lon": 103.8198, "city": "Singapore", "region": "Asia"},
+    "Taiwan": {"lat": 25.0330, "lon": 121.5654, "city": "Taipei", "region": "Asia"},
+    "Philippines": {"lat": 14.5995, "lon": 120.9842, "city": "Manila", "region": "Asia"},
+    "Bangladesh": {"lat": 23.8103, "lon": 90.4125, "city": "Dhaka", "region": "Asia"},
+    "Pakistan": {"lat": 24.8607, "lon": 67.0011, "city": "Karachi", "region": "Asia"},
+    "Australia": {"lat": -33.8688, "lon": 151.2093, "city": "Sydney", "region": "Oceania"},
+    
+    # 🇪🇺 Europe
+    "Germany": {"lat": 50.1109, "lon": 8.6821, "city": "Frankfurt", "region": "Europe"},
+    "UK": {"lat": 51.509865, "lon": -0.118092, "city": "London", "region": "Europe"},
+    "France": {"lat": 48.8566, "lon": 2.3522, "city": "Paris", "region": "Europe"},
+    "Italy": {"lat": 45.4642, "lon": 9.1900, "city": "Milan", "region": "Europe"},
+    "Spain": {"lat": 40.4168, "lon": -3.7038, "city": "Madrid", "region": "Europe"},
+    "Netherlands": {"lat": 52.3676, "lon": 4.9041, "city": "Amsterdam", "region": "Europe"},
+    "Poland": {"lat": 52.2297, "lon": 21.0122, "city": "Warsaw", "region": "Europe"},
+    "Belgium": {"lat": 50.8503, "lon": 4.3517, "city": "Brussels", "region": "Europe"},
+    "Switzerland": {"lat": 46.9480, "lon": 7.4474, "city": "Bern", "region": "Europe"},
+    "Austria": {"lat": 48.2082, "lon": 16.3738, "city": "Vienna", "region": "Europe"},
+    "Sweden": {"lat": 59.3293, "lon": 18.0686, "city": "Stockholm", "region": "Europe"},
+    "Norway": {"lat": 59.9139, "lon": 10.7522, "city": "Oslo", "region": "Europe"},
+    "Denmark": {"lat": 55.6761, "lon": 12.5683, "city": "Copenhagen", "region": "Europe"},
+    "Finland": {"lat": 60.1699, "lon": 24.9384, "city": "Helsinki", "region": "Europe"},
+    "Ireland": {"lat": 53.3498, "lon": -6.2603, "city": "Dublin", "region": "Europe"},
+    "Portugal": {"lat": 38.7223, "lon": -9.1393, "city": "Lisbon", "region": "Europe"},
+    "Czech Republic": {"lat": 50.0755, "lon": 14.4378, "city": "Prague", "region": "Europe"},
+    "Hungary": {"lat": 47.4979, "lon": 19.0402, "city": "Budapest", "region": "Europe"},
+    "Romania": {"lat": 44.4268, "lon": 26.1025, "city": "Bucharest", "region": "Europe"},
+    "Greece": {"lat": 37.9755, "lon": 23.7348, "city": "Athens", "region": "Europe"},
+    "Turkey": {"lat": 39.9334, "lon": 32.8597, "city": "Ankara", "region": "Europe"},
+    
+    # 🌎 Americas  
+    "USA": {"lat": 39.0458, "lon": -76.6413, "city": "Baltimore", "region": "North America"},
+    "Canada": {"lat": 43.6532, "lon": -79.3832, "city": "Toronto", "region": "North America"},
+    "Mexico": {"lat": 19.4326, "lon": -99.1332, "city": "Mexico City", "region": "North America"},
+    "Brazil": {"lat": -23.5505, "lon": -46.6333, "city": "Sao Paulo", "region": "South America"},
 }
 uk_hub = {"lat": 51.8821, "lon": -0.5057, "city": "Dunstable"}
 
@@ -2273,13 +2292,116 @@ def extract_material(text):
 
 
 def haversine(lat1, lon1, lat2, lon2):
+    """Calculate the great circle distance between two points on Earth (in km)"""
     from math import radians, cos, sin, sqrt, atan2
-    R = 6371
+    R = 6371  # Earth's radius in kilometers
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c
+
+
+def calculate_global_distance(origin_country, destination_country):
+    """
+    🌍 GLOBAL DISTANCE CALCULATOR
+    
+    Calculate distance between any two countries using their manufacturing/logistics hubs.
+    This replaces the UK-centric distance calculation with a flexible global system.
+    
+    Args:
+        origin_country (str): Manufacturing origin country (e.g., "China")
+        destination_country (str): Destination country (e.g., "UK", "USA", "Germany")
+        
+    Returns:
+        dict: {
+            "distance_km": float,
+            "origin_city": str,
+            "destination_city": str,
+            "route_type": str ("domestic", "regional", "international")
+        }
+    """
+    
+    # Get hub coordinates for both countries
+    origin_hub = origin_hubs.get(origin_country)
+    destination_hub = origin_hubs.get(destination_country)
+    
+    # Fallback to UK if destination not found (backwards compatibility)
+    if not destination_hub:
+        destination_hub = origin_hubs.get("UK")
+        destination_country = "UK"
+    
+    # Fallback to major hubs if origin not found
+    if not origin_hub:
+        print(f"⚠️ No hub data for {origin_country}, using China as fallback")
+        origin_hub = origin_hubs.get("China")
+        origin_country = "China"
+    
+    # Calculate distance
+    distance_km = round(haversine(
+        origin_hub["lat"], origin_hub["lon"],
+        destination_hub["lat"], destination_hub["lon"]
+    ), 1)
+    
+    # Determine route type for logistics planning
+    route_type = "domestic"
+    if origin_country != destination_country:
+        # Check if both countries are in same region
+        origin_region = origin_hub.get("region", "Unknown")
+        dest_region = destination_hub.get("region", "Unknown")
+        
+        if origin_region == dest_region:
+            route_type = "regional"  # e.g., Germany → France (both Europe)
+        else:
+            route_type = "international"  # e.g., China → UK (Asia → Europe)
+    
+    return {
+        "distance_km": distance_km,
+        "origin_city": origin_hub["city"],
+        "destination_city": destination_hub["city"],
+        "route_type": route_type,
+        "origin_country": origin_country,
+        "destination_country": destination_country
+    }
+
+
+def get_optimal_transport_mode(distance_info):
+    """
+    🚛 SMART TRANSPORT MODE SELECTION
+    
+    Determines optimal transport mode based on distance and route type.
+    More accurate than the current country-based system.
+    
+    Args:
+        distance_info (dict): Output from calculate_global_distance()
+        
+    Returns:
+        str: "Land", "Air", "Ship"
+    """
+    distance_km = distance_info["distance_km"]
+    route_type = distance_info["route_type"]
+    
+    # Domestic transport
+    if route_type == "domestic":
+        return "Land"
+    
+    # Regional transport (same continent)
+    elif route_type == "regional":
+        if distance_km < 1500:  # e.g., Germany → France
+            return "Land"
+        else:  # e.g., UK → Turkey
+            return "Air"
+    
+    # International transport (cross-continent)
+    else:
+        if distance_km > 8000:  # Very long distances (e.g., China → UK)
+            return "Ship"  # Most cost-effective for bulk goods
+        elif distance_km > 3000:  # Medium distances (e.g., USA → UK)
+            return "Air"  # Faster for medium distances
+        else:  # Short international (e.g., UK → Ireland)
+            return "Air"
+    
+    return "Air"  # Default fallback
 
 
 
@@ -3376,17 +3498,15 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
             print(f"🛡️ Protected origin: {origin_country} (source: {origin_source})")
 
 
-        origin_hub = origin_hubs.get(origin_country, origin_hubs["UK"])
-        distance = round(haversine(origin_hub["lat"], origin_hub["lon"], uk_hub["lat"], uk_hub["lon"]), 1)
-
-            # === Infer smarter transport mode
-        long_distance_countries = ["China", "USA", "Japan"]
-        if origin_country in long_distance_countries:
-            transport_mode = "Ship"
-        elif origin_country == "UK":
-            transport_mode = "Land"
-        else:
-            transport_mode = "Air"
+        # 🌍 GLOBAL DISTANCE CALCULATION - Flexible destination support
+        # Default to UK for backwards compatibility, but system supports any destination
+        destination_country = "UK"  # TODO: Make this configurable based on user location
+        
+        distance_info = calculate_global_distance(origin_country, destination_country)
+        distance = distance_info["distance_km"]
+        transport_mode = get_optimal_transport_mode(distance_info)
+        
+        print(f"🌍 Global routing: {distance_info['origin_city']} → {distance_info['destination_city']} ({distance} km, {transport_mode}, {distance_info['route_type']})")
 
         
 
@@ -3444,10 +3564,11 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
         print(f"♻️ Recyclability: {recyclability} ({recyclability_percentage}%) - {recyclability_desc}")
         print("================================\n")
 
-        # Calculate distance here before assigning to product
-        origin_hub = origin_hubs.get(origin_country, origin_hubs["UK"])
-        distance_origin_to_uk = round(haversine(origin_hub["lat"], origin_hub["lon"], uk_hub["lat"], uk_hub["lon"]), 1)
-        distance_uk_to_user = 100
+        # 🌍 Calculate global distances using the new flexible system
+        destination_country = "UK"  # TODO: Make configurable based on user location
+        distance_info = calculate_global_distance(origin_country, destination_country)
+        distance_origin_to_uk = distance_info["distance_km"]
+        distance_uk_to_user = 100  # TODO: Calculate based on user's actual location
 
         # === Now build your product dict (after fuzzy fixes)
         
@@ -3523,14 +3644,16 @@ def scrape_amazon_product_page(amazon_url, fallback=False):
         return product
 
 
-        # 🌍 Add missing distance fields
-        origin_hub = origin_hubs.get(origin_country, origin_hubs["UK"])
-        distance_origin_to_uk = round(haversine(origin_hub["lat"], origin_hub["lon"], uk_hub["lat"], uk_hub["lon"]), 1)
-        distance_uk_to_user = 100  # static fallback — change if postcode logic is added
-
-        product["distance_origin_to_uk"] = distance_origin_to_uk
-        product["distance_uk_to_user"] = distance_uk_to_user
-        print(f"🌍 Returning distances: {product.get('distance_origin_to_uk')} km from origin, {product.get('distance_uk_to_user')} km from UK hub")
+        # 🌍 Add comprehensive distance fields using global calculation system
+        destination_country = "UK"  # TODO: Make configurable based on user location
+        distance_info = calculate_global_distance(origin_country, destination_country)
+        
+        product["distance_origin_to_uk"] = distance_info["distance_km"]
+        product["distance_uk_to_user"] = 100  # TODO: Calculate based on actual user location
+        product["transport_mode"] = get_optimal_transport_mode(distance_info)
+        product["route_type"] = distance_info["route_type"]
+        
+        print(f"🌍 Global distances: {distance_info['origin_city']} → {distance_info['destination_city']} = {distance_info['distance_km']} km ({distance_info['route_type']}, {product['transport_mode']})")
 
 
         print("✅ Scraped product:", product["title"])
