@@ -14,7 +14,7 @@ export default function Footer() {
             </h3>
             <p className="text-slate-400 leading-relaxed mb-4">
               Advanced environmental impact prediction using machine learning and data science. 
-              Developed as part of academic research at University College London.
+              Developed as part of academic research at University of the West of England Bristol.
             </p>
             <div className="flex items-center space-x-4 text-slate-500">
               <span className="flex items-center space-x-1">

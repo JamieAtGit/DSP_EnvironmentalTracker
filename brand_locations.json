@@ -417,5 +417,12 @@
       "city": "Shanghai"
     },
     "fulfillment": "UK"
+  },
+  "bomei pack": {
+    "origin": {
+      "country": "China",
+      "city": "Shanghai"
+    },
+    "fulfillment": "UK"
   }
 }

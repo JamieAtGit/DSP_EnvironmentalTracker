@@ -1908,5 +1908,49 @@
       "material_source": "category_guess",
       "material_confidence": "unknown"
     }
+  },
+  {
+    "asin": "B0B71V5Z69",
+    "title": "BOMEI PACK 3 rolls Aluminum foil tape Resistant High Temperature 50 mm x 50 m,Moisture,UV resistant Waterproof for Pipes Repairing,Insulating,heating and ventilation (HVAC) duct work",
+    "brand_estimated_origin": "China",
+    "origin_city": "Shanghai",
+    "distance_origin_to_uk": 9196.1,
+    "distance_uk_to_user": 100,
+    "estimated_weight_kg": 1.39,
+    "raw_product_weight_kg": 1.32,
+    "dimensions_cm": null,
+    "material_type": "Aluminium",
+    "co2_emissions": 2.64,
+    "recyclability": null,
+    "recyclability_percentage": 30,
+    "recyclability_description": "Recyclability assessment pending",
+    "transport_mode": "Ship",
+    "confidence": "Medium",
+    "materials": {
+      "primary_material": "Aluminium",
+      "all_materials": [
+        {
+          "name": "Aluminium",
+          "weight": 0.3333333333333333
+        },
+        {
+          "name": "Copper",
+          "weight": 0.3333333333333333
+        },
+        {
+          "name": "Acrylic",
+          "weight": 0.3333333333333333
+        }
+      ],
+      "material_count": 3
+    },
+    "data_sources": {
+      "origin_source": "brand_db_generic_confirmed",
+      "origin_confidence": "very_high",
+      "weight_source": "product_details_table.a-keyvalue tr",
+      "weight_confidence": "high",
+      "material_source": "structured_multi_material",
+      "material_confidence": "high"
+    }
   }
 ]
