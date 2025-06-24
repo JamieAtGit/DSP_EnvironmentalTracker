@@ -38,7 +38,18 @@ app = Flask(
     static_folder=os.path.join(os.path.dirname(__file__), "..", "static"),
     static_url_path="/static"
 )
-app.secret_key = "super-secret-key"
+# Import configuration and security
+import os
+from backend.config import config
+from backend.security import secure_headers, safe_error_response, rate_limit, require_auth, validate_input, PREDICTION_SCHEMA
+
+# Load configuration based on environment
+config_name = os.environ.get('FLASK_ENV', 'development')
+app_config = config.get(config_name, config['default'])
+app.config.from_object(app_config)
+
+# Use secure secret key from configuration
+app.secret_key = app_config.SECRET_KEY
 
 
 from flask_cors import CORS
@@ -55,16 +66,20 @@ CORS(app,
 
 register_routes(app)
 
+# Add security headers to all responses
+@app.after_request
+def add_security_headers(response):
+    return secure_headers(response)
+
 
 
 SUBMISSION_FILE = "submitted_predictions.json"
 
 
 @app.route("/admin/submissions")
+@rate_limit(requests_per_minute=20, requests_per_hour=100)
+@require_auth(roles=['admin'])
 def get_submissions():
-    user = session.get("user")
-    if not user or user.get("role") != "admin":
-        return jsonify({"error": "Unauthorized"}), 401
 
     if not os.path.exists(SUBMISSION_FILE):
         return jsonify([])
@@ -75,21 +90,39 @@ def get_submissions():
 
 
 @app.route("/admin/update", methods=["POST"])
+@rate_limit(requests_per_minute=10, requests_per_hour=50)
+@require_auth(roles=['admin'])
 def update_submission():
-    user = session.get("user")
-    if not user or user.get("role") != "admin":
-        return jsonify({"error": "Unauthorized"}), 401
 
     item = request.json
-    with open(SUBMISSION_FILE, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    for i, row in enumerate(data):
-        if row["title"] == item["title"]:
-            data[i] = item
-            break
-    with open(SUBMISSION_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-    return jsonify({"status": "success"})
+    
+    # Validate item data
+    if not item or not isinstance(item, dict) or not item.get("title"):
+        return jsonify({"error": "Invalid item data"}), 400
+    
+    try:
+        if not os.path.exists(SUBMISSION_FILE):
+            return jsonify({"error": "Submission file not found"}), 404
+            
+        with open(SUBMISSION_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        updated = False
+        for i, row in enumerate(data):
+            if isinstance(row, dict) and row.get("title") == item["title"]:
+                data[i] = item
+                updated = True
+                break
+        
+        if not updated:
+            return jsonify({"error": "Item not found"}), 404
+            
+        with open(SUBMISSION_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        
+        return jsonify({"status": "success"})
+    except (json.JSONDecodeError, IOError) as e:
+        return safe_error_response(e, 500)
 
 
 
@@ -125,6 +158,9 @@ material_co2_map = load_material_co2_data()
 
 
 @app.route("/predict", methods=["POST"])
+@rate_limit(requests_per_minute=30, requests_per_hour=500)  # Reasonable limits for ML endpoint
+@require_auth()  # Require authentication
+@validate_input(PREDICTION_SCHEMA)  # Validate input data
 def predict_eco_score():
     
     print("📩 /predict endpoint was hit via POST")  # debug
@@ -351,7 +387,7 @@ def predict_eco_score():
 
     except Exception as e:
         print(f"❌ Error in /predict: {e}")
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 # === Load Model and Encoders ===
@@ -456,7 +492,7 @@ def get_all_model_metrics():
                 "xgboost": json.load(f2)
             })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 @app.route("/model-metrics", methods=["GET"])
@@ -465,7 +501,7 @@ def get_model_metrics():
         with open(os.path.join(model_dir, "metrics.json"), "r", encoding="utf-8") as f:
             return jsonify(json.load(f))
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 @app.route("/api/ml-audit", methods=["GET"])
@@ -665,7 +701,7 @@ def get_feature_importance():
         data = [{"feature": f, "importance": round(i * 100, 2)} for f, i in zip(feature_names, importances)]
         return jsonify(data)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 
@@ -733,7 +769,7 @@ def fetch_eco_dataset():
         return jsonify(df.to_dict(orient="records"))
     except Exception as e:
         print(f"❌ Failed to return eco dataset: {e}")
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 
@@ -757,7 +793,7 @@ def insights_dashboard():
         return jsonify(insights.to_dict(orient="records"))
     except Exception as e:
         print(f"❌ Failed to serve insights: {e}")
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 @app.route("/api/dashboard-metrics", methods=["GET"])
@@ -851,7 +887,7 @@ def get_dashboard_metrics():
         
     except Exception as e:
         print(f"❌ Dashboard metrics error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 @app.route("/api/feedback", methods=["POST"])
@@ -876,7 +912,7 @@ def save_feedback():
 
     except Exception as e:
         print(f"❌ Feedback error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 
@@ -1277,7 +1313,7 @@ def estimate_emissions():
 
     except Exception as e:
         print(f"❌ Uncaught error in estimate_emissions: {e}")
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 @app.route("/test_post", methods=["POST"])
@@ -1287,7 +1323,7 @@ def test_post():
         print("✅ Received test POST:", data)
         return jsonify({"message": "Success", "you_sent": data}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return safe_error_response(e, 500)
 
 
 @app.route("/health")
