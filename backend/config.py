@@ -1,17 +1,25 @@
 import os
 import secrets
 from datetime import timedelta
-####
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Config:
     """Base configuration with secure defaults."""
     
-    # Generate a secure secret key if not provided
+    # Security: Load secret key from environment variables
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
         # Generate a cryptographically secure random secret key
         SECRET_KEY = secrets.token_urlsafe(32)
         print("⚠️  WARNING: Using generated secret key. Set SECRET_KEY environment variable for production!")
+    
+    # JWT configuration for API authentication
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
     # Session configuration
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)

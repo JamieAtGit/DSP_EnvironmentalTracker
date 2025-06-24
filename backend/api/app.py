@@ -71,22 +71,88 @@ app.secret_key = app_config.SECRET_KEY
 
 from flask_cors import CORS
 
-CORS(app, 
-     supports_credentials=True, 
-     origins=["*"],  # Allow all origins for extension development
-     methods=["GET", "POST", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization"]
-)
+# **SECURITY FIX**: Secure CORS configuration - No more wildcard origins!
+def configure_secure_cors(app):
+    """Configure CORS with security best practices"""
+    # Load allowed origins from environment variables
+    allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:5173').split(',')
+    allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
+    
+    # Log the origins for security audit
+    app.logger.info(f"🔒 CORS configured for origins: {allowed_origins}")
+    
+    CORS(app, 
+         origins=allowed_origins,  # Specific origins only - CRITICAL SECURITY FIX
+         supports_credentials=True,
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+         max_age=86400,  # Cache preflight for 24 hours
+         expose_headers=["X-Total-Count", "X-Page-Count"]  # Expose pagination headers
+    )
+    
+    return app
+
+# Apply secure CORS configuration
+app = configure_secure_cors(app)
 
 
 
 
 register_routes(app)
 
-# Add security headers to all responses
+# **SECURITY ENHANCEMENT**: Comprehensive security headers
 @app.after_request
 def add_security_headers(response):
-    return secure_headers(response)
+    """Add comprehensive security headers to all responses"""
+    
+    # Basic security headers from security module
+    response = secure_headers(response)
+    
+    # **ADDITIONAL ENTERPRISE-GRADE SECURITY HEADERS**
+    
+    # Content Security Policy - Prevent XSS attacks
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self'; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'"
+    )
+    
+    # Strict Transport Security - Force HTTPS
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    
+    # Prevent framing (clickjacking protection)
+    response.headers['X-Frame-Options'] = 'DENY'
+    
+    # XSS Protection
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # Referrer Policy
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    
+    # Permissions Policy (formerly Feature Policy)
+    response.headers['Permissions-Policy'] = (
+        'geolocation=(), microphone=(), camera=(), '
+        'fullscreen=(self), payment=(), usb=()'
+    )
+    
+    # Cache Control for sensitive endpoints
+    if request.endpoint in ['predict_eco_score', 'estimate_emissions']:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    
+    # Custom security header for API versioning
+    response.headers['X-API-Version'] = '1.0'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    
+    return response
 
 
 
@@ -963,13 +1029,17 @@ def map_score_to_grade(score):
 
 
 @app.route("/estimate_emissions", methods=["POST", "OPTIONS"])
+@rate_limit(requests_per_minute=10, requests_per_hour=100)  # SECURITY: Rate limiting for scraping
 def estimate_emissions():
     print("🔔 Route hit: /estimate_emissions")
     
     # Handle preflight OPTIONS request
     if request.method == "OPTIONS":
         response = jsonify({})
-        response.headers.add('Access-Control-Allow-Origin', '*')
+        # Use secure CORS headers instead of wildcard
+        allowed_origin = request.headers.get('Origin')
+        if allowed_origin in os.environ.get('CORS_ORIGINS', 'http://localhost:5173').split(','):
+            response.headers.add('Access-Control-Allow-Origin', allowed_origin)
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
         return response
@@ -977,6 +1047,58 @@ def estimate_emissions():
     data = request.get_json()
     if not data:
         return jsonify({"error": "Missing JSON in request"}), 400
+
+    # **SECURITY FIX**: Enhanced input validation to prevent SSRF attacks
+    def validate_amazon_url(url):
+        """Validate Amazon URL to prevent SSRF attacks"""
+        import re
+        from urllib.parse import urlparse
+        
+        if not url or not isinstance(url, str):
+            return False, "Invalid URL format"
+        
+        # Parse URL
+        try:
+            parsed = urlparse(url)
+        except Exception:
+            return False, "Malformed URL"
+        
+        # Check scheme
+        if parsed.scheme not in ['http', 'https']:
+            return False, "Only HTTP/HTTPS protocols allowed"
+        
+        # Validate domain - only allow Amazon domains
+        allowed_domains = [
+            'amazon.com', 'amazon.co.uk', 'amazon.de', 'amazon.fr',
+            'amazon.it', 'amazon.es', 'amazon.ca', 'amazon.com.au'
+        ]
+        
+        domain = parsed.netloc.lower()
+        if not any(domain.endswith(allowed_domain) for allowed_domain in allowed_domains):
+            return False, f"Only Amazon domains allowed. Got: {domain}"
+        
+        # Check for suspicious patterns
+        suspicious_patterns = ['localhost', '127.0.0.1', '0.0.0.0', '169.254', '10.', '192.168', '172.']
+        if any(pattern in url.lower() for pattern in suspicious_patterns):
+            return False, "Suspicious URL pattern detected"
+        
+        # Length check
+        if len(url) > 2000:
+            return False, "URL too long"
+        
+        return True, "Valid"
+
+    def validate_postcode(postcode):
+        """Validate UK postcode format"""
+        if not postcode or not isinstance(postcode, str):
+            return False, "Invalid postcode format"
+        
+        # Basic UK postcode regex
+        uk_postcode_pattern = r'^[A-Z]{1,2}[0-9R][0-9A-Z]?\s?[0-9][A-Z]{2}$'
+        if not re.match(uk_postcode_pattern, postcode.upper().strip()):
+            return False, "Invalid UK postcode format"
+        
+        return True, "Valid"
 
     # Convert numpy types to Python native types for JSON serialization
     def convert_numpy_types(obj):
@@ -994,9 +1116,24 @@ def estimate_emissions():
         include_packaging = data.get("include_packaging", True)
         override_mode = data.get("override_transport_mode")
 
-        # Validate inputs
+        # **SECURITY VALIDATION**: Comprehensive input validation
         if not url or not postcode:
             return jsonify({"error": "Missing URL or postcode"}), 400
+        
+        # Validate Amazon URL (SSRF protection)
+        url_valid, url_message = validate_amazon_url(url)
+        if not url_valid:
+            app.logger.warning(f"🚨 SECURITY: Invalid URL rejected: {url} - {url_message}")
+            return jsonify({"error": f"Invalid URL: {url_message}"}), 400
+        
+        # Validate postcode
+        postcode_valid, postcode_message = validate_postcode(postcode)
+        if not postcode_valid:
+            return jsonify({"error": f"Invalid postcode: {postcode_message}"}), 400
+        
+        # Validate transport mode override
+        if override_mode and override_mode not in ["Truck", "Ship", "Air"]:
+            return jsonify({"error": "Invalid transport mode"}), 400
 
         # Scrape product with debugging
         from backend.scrapers.amazon.scrape_amazon_titles import scrape_amazon_product_page, haversine, origin_hubs, uk_hub
