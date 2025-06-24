@@ -25,6 +25,11 @@ __pycache__/
 *.sqlite3
 .env
 .venv/
+venv/
+get-pip.py
+
+# === Claude Settings ===
+.claude/
 
 
 # === Node ===

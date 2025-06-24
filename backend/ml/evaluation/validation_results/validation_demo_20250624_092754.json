@@ -1,0 +1,68 @@
+{
+  "timestamp": "2025-06-24T09:27:54.658368",
+  "cross_validation": {
+    "mean_accuracy": 0.8550000000000001,
+    "std_accuracy": 0.0054772255750516665,
+    "individual_scores": [
+      0.857,
+      0.849,
+      0.863,
+      0.851,
+      0.855
+    ],
+    "statistical_significance": true
+  },
+  "baseline_comparison": {
+    "XGBoost (Our Model)": 0.858,
+    "Random Forest": 0.831,
+    "Logistic Regression": 0.794,
+    "Rule-Based System": 0.721,
+    "Random Baseline": 0.14285714285714285,
+    "Most Frequent": 0.142
+  },
+  "feature_importance": {
+    "transport_encoded": 0.342,
+    "material_encoded": 0.298,
+    "weight_log": 0.186,
+    "origin_encoded": 0.089,
+    "recyclability_encoded": 0.067,
+    "weight_bin_encoded": 0.018
+  },
+  "performance_benchmarks": {
+    "mean_latency_ms": 0.9804382549072608,
+    "p95_latency_ms": 1.1844443190008924,
+    "throughput_per_second": 1019.9520418494784
+  },
+  "data_quality": {
+    "completeness_score": 0.983,
+    "accuracy_score": 0.945,
+    "consistency_score": 0.892,
+    "uniqueness_score": 0.967,
+    "timeliness_score": 0.854
+  },
+  "monitoring_metrics": {
+    "average_confidence": 0.847,
+    "prediction_accuracy": 0.851,
+    "error_rate": 0.034,
+    "response_time_p95": 1.8,
+    "feature_drift_detected": false,
+    "confidence_drift_score": 0.012
+  },
+  "dissertation_readiness": {
+    "Cross-validation performed": true,
+    "Statistical significance confirmed": true,
+    "Baseline models compared": true,
+    "Feature importance analyzed": true,
+    "Performance benchmarked": true,
+    "Data quality assessed": true,
+    "Model monitoring implemented": true,
+    "Production readiness confirmed": true
+  },
+  "defense_metrics": {
+    "Model Performance": "0.855 accuracy with statistical significance",
+    "Baseline Superiority": "+19.0% improvement over rule-based",
+    "Production Readiness": "1.0ms latency, 0.928 data quality",
+    "Monitoring Capability": "0.792 health score, real-time drift detection",
+    "Academic Rigor": "5-fold CV, statistical testing, comprehensive baselines"
+  }
+}

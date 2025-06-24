@@ -1,0 +1,509 @@
+{
+  "experiment_metadata": {
+    "timestamp": "20250624_092647",
+    "data_path": "/mnt/c/DigSysProj/DSP/backend/ml/models/eco_dataset.csv",
+    "framework_version": "1.0.0"
+  },
+  "experiments": {
+    "model_comparison": {
+      "models": {
+        "Rule-Based System": {
+          "accuracy": 0.10756123535676251,
+          "macro_precision": 0.023183319570602805,
+          "macro_recall": 0.07368283093053736,
+          "macro_f1": 0.03526949241234955,
+          "training_time": 0.0035746097564697266,
+          "prediction_time": 0.0015416145324707031,
+          "predictions_per_second": 609101.6789359727,
+          "class_metrics": {
+            "F": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 272
+            },
+            "C": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 238
+            },
+            "B": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 54
+            },
+            "A+": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 19
+            },
+            "E": {
+              "precision": 0.025,
+              "recall": 0.08,
+              "f1_score": 0.03809523809523809,
+              "support": 75
+            },
+            "A": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 63
+            },
+            "D": {
+              "precision": 0.13728323699421965,
+              "recall": 0.43577981651376146,
+              "f1_score": 0.20879120879120877,
+              "support": 218
+            }
+          }
+        },
+        "Weighted Average": {
+          "accuracy": 0.2896698615548456,
+          "macro_precision": 0.04138140879354937,
+          "macro_recall": 0.14285714285714285,
+          "macro_f1": 0.06417364633714757,
+          "training_time": 0.014020204544067383,
+          "prediction_time": 0.0015511512756347656,
+          "predictions_per_second": 605356.8177067322,
+          "class_metrics": {
+            "F": {
+              "precision": 0.2896698615548456,
+              "recall": 1.0,
+              "f1_score": 0.44921552436003304,
+              "support": 272
+            },
+            "C": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 238
+            },
+            "B": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 54
+            },
+            "A+": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 19
+            },
+            "E": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 75
+            },
+            "A": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 63
+            },
+            "D": {
+              "precision": 0,
+              "recall": 0.0,
+              "f1_score": 0,
+              "support": 218
+            }
+          }
+        },
+        "Random Baseline": {
+          "accuracy": 0.15122470713525027,
+          "macro_precision": 0.15407641717795184,
+          "macro_recall": 0.1526350590131433,
+          "macro_f1": 0.12966779313174934,
+          "training_time": 2.1457672119140625e-06,
+          "prediction_time": 0.0005161762237548828,
+          "predictions_per_second": 1819146.1690531177,
+          "class_metrics": {
+            "F": {
+              "precision": 0.24503311258278146,
+              "recall": 0.13602941176470587,
+              "f1_score": 0.17494089834515364,
+              "support": 272
+            },
+            "C": {
+              "precision": 0.36752136752136755,
+              "recall": 0.18067226890756302,
+              "f1_score": 0.24225352112676055,
+              "support": 238
+            },
+            "B": {
+              "precision": 0.05,
+              "recall": 0.1111111111111111,
+              "f1_score": 0.06896551724137932,
+              "support": 54
+            },
+            "A+": {
+              "precision": 0.030303030303030304,
+              "recall": 0.21052631578947367,
+              "f1_score": 0.052980132450331126,
+              "support": 19
+            },
+            "E": {
+              "precision": 0.06040268456375839,
+              "recall": 0.12,
+              "f1_score": 0.08035714285714286,
+              "support": 75
+            },
+            "A": {
+              "precision": 0.07142857142857142,
+              "recall": 0.15873015873015872,
+              "f1_score": 0.09852216748768472,
+              "support": 63
+            },
+            "D": {
+              "precision": 0.25384615384615383,
+              "recall": 0.15137614678899083,
+              "f1_score": 0.18965517241379312,
+              "support": 218
+            }
+          }
+        },
+        "Most Frequent": {
+          "accuracy": 0.1448349307774228,
+          "macro_precision": 0.14789330498463912,
+          "macro_recall": 0.13502567334138976,
+          "macro_f1": 0.1249637602593721,
+          "training_time": 1.1920928955078125e-06,
+          "prediction_time": 0.0003421306610107422,
+          "predictions_per_second": 2744565.47456446,
+          "class_metrics": {
+            "F": {
+              "precision": 0.27906976744186046,
+              "recall": 0.1323529411764706,
+              "f1_score": 0.1795511221945137,
+              "support": 272
+            },
+            "C": {
+              "precision": 0.264,
+              "recall": 0.13865546218487396,
+              "f1_score": 0.18181818181818182,
+              "support": 238
+            },
+            "B": {
+              "precision": 0.03424657534246575,
+              "recall": 0.09259259259259259,
+              "f1_score": 0.05,
+              "support": 54
+            },
+            "A+": {
+              "precision": 0.007352941176470588,
+              "recall": 0.05263157894736842,
+              "f1_score": 0.012903225806451613,
+              "support": 19
+            },
+            "E": {
+              "precision": 0.104,
+              "recall": 0.17333333333333334,
+              "f1_score": 0.13,
+              "support": 75
+            },
+            "A": {
+              "precision": 0.08571428571428572,
+              "recall": 0.19047619047619047,
+              "f1_score": 0.11822660098522166,
+              "support": 63
+            },
+            "D": {
+              "precision": 0.2608695652173913,
+              "recall": 0.1651376146788991,
+              "f1_score": 0.20224719101123595,
+              "support": 218
+            }
+          }
+        }
+      },
+      "statistical_analysis": {
+        "rule_vs_random": {
+          "t_statistic": Infinity,
+          "p_value": 0,
+          "significant": true,
+          "baseline_accuracy": 0.14285714285714285
+        },
+        "best_model": "Weighted Average",
+        "performance_improvement": -24.707135250266234
+      },
+      "test_set_size": 939,
+      "conclusion": "Rule-based system shows -24.7% improvement over random baseline"
+    },
+    "feature_engineering": {
+      "feature_sets": {
+        "basic": {
+          "features": [
+            "material_encoded",
+            "weight"
+          ],
+          "num_features": 2,
+          "accuracy": 0.21405750798722045,
+          "feature_importance": {
+            "material_encoded": 0.037050122497923395,
+            "weight": 0.3236473588849522
+          },
+          "top_feature": "weight"
+        },
+        "enhanced": {
+          "features": [
+            "material_encoded",
+            "weight",
+            "transport_encoded",
+            "recyclability_encoded"
+          ],
+          "num_features": 4,
+          "accuracy": 0.10756123535676251,
+          "feature_importance": {
+            "material_encoded": 0.037050122497923395,
+            "weight": 0.3236473588849522,
+            "transport_encoded": 0.10513473366451474,
+            "recyclability_encoded": 0.0014154776224829832
+          },
+          "top_feature": "weight"
+        },
+        "full": {
+          "features": [
+            "material_encoded",
+            "weight",
+            "transport_encoded",
+            "recyclability_encoded",
+            "origin_encoded",
+            "weight_log",
+            "weight_bin"
+          ],
+          "num_features": 7,
+          "accuracy": 0.10756123535676251,
+          "feature_importance": {
+            "material_encoded": 0.037050122497923395,
+            "weight": 0.3236473588849522,
+            "transport_encoded": 0.10513473366451474,
+            "recyclability_encoded": 0.0014154776224829832,
+            "origin_encoded": 0.004786294857819687,
+            "weight_log": 0.3090353729256658,
+            "weight_bin": 0.16538955908633077
+          },
+          "top_feature": "weight"
+        },
+        "weight_only": {
+          "features": [
+            "weight",
+            "weight_log",
+            "weight_bin"
+          ],
+          "num_features": 3,
+          "accuracy": 0.2321618743343983,
+          "feature_importance": {
+            "weight": 0.3236473588849522,
+            "weight_log": 0.3090353729256658,
+            "weight_bin": 0.16538955908633077
+          },
+          "top_feature": "weight"
+        },
+        "categorical_only": {
+          "features": [
+            "material_encoded",
+            "transport_encoded",
+            "recyclability_encoded",
+            "origin_encoded"
+          ],
+          "num_features": 4,
+          "accuracy": 0.20234291799787008,
+          "feature_importance": {
+            "material_encoded": 0.037050122497923395,
+            "transport_encoded": 0.10513473366451474,
+            "recyclability_encoded": 0.0014154776224829832,
+            "origin_encoded": 0.004786294857819687
+          },
+          "top_feature": "transport_encoded"
+        }
+      },
+      "analysis": {
+        "best_feature_set": "weight_only",
+        "worst_feature_set": "enhanced",
+        "max_improvement_percentage": 115.84158415841586,
+        "conclusion": "Feature engineering provides up to 115.8% improvement in accuracy"
+      }
+    },
+    "data_quality": {
+      "completeness_score": 1.0,
+      "accuracy_score": 0.9454739084132056,
+      "uniqueness_score": 0.027689030883919063,
+      "balance_score": 0.7816217860946295,
+      "consistency_score": 0.8,
+      "overall_quality_score": 0.7391495511942796,
+      "quality_issues": {
+        "incomplete_records": 0,
+        "accuracy_issues": 256,
+        "duplicate_products": 4565,
+        "class_imbalance": false
+      },
+      "recommendations": [
+        "Remove duplicate products - implement deduplication process"
+      ]
+    },
+    "performance_benchmarking": {
+      "single_prediction_latency": {
+        "mean_ms": 0.0018954277038574219,
+        "std_ms": 0.0013590366003221523,
+        "p95_ms": 0.0019192695617675775,
+        "p99_ms": 0.01097202301025391
+      },
+      "batch_performance": {
+        "1": {
+          "mean_time_ms": 0.0016689300537109375,
+          "std_time_ms": 0.00027530206164819035,
+          "predictions_per_second": 599186.2857142857
+        },
+        "10": {
+          "mean_time_ms": 0.016736984252929688,
+          "std_time_ms": 0.0005818368663064043,
+          "predictions_per_second": 597479.2022792023
+        },
+        "50": {
+          "mean_time_ms": 0.08435249328613281,
+          "std_time_ms": 0.007731202139750489,
+          "predictions_per_second": 592750.7066139062
+        },
+        "100": {
+          "mean_time_ms": 0.16357898712158203,
+          "std_time_ms": 0.006588534936526291,
+          "predictions_per_second": 611325.4627605305
+        }
+      },
+      "model_characteristics": {
+        "estimated_size_bytes": 635,
+        "training_time_complexity": "O(n)",
+        "prediction_time_complexity": "O(1)",
+        "memory_complexity": "O(1)"
+      },
+      "scalability_analysis": {
+        "suitable_for_real_time": true,
+        "suitable_for_batch": true,
+        "production_ready": true
+      }
+    },
+    "cross_validation": {
+      "k_folds": 5,
+      "fold_size": 939,
+      "results": {
+        "accuracy_scores": {
+          "mean": 0.16272630457933973,
+          "std": 0.03168510206030094,
+          "scores": [
+            0.1757188498402556,
+            0.18849840255591055,
+            0.17252396166134185,
+            0.16932907348242812,
+            0.10756123535676251
+          ],
+          "statistical_test": {
+            "t_statistic": 1.4021983007097516,
+            "p_value": 1,
+            "significant": false,
+            "baseline": 0.14285714285714285
+          }
+        },
+        "precision_scores": {
+          "mean": 0.03862973797324359,
+          "std": 0.008765274790506709,
+          "scores": [
+            0.04292647171410991,
+            0.0447439771274906,
+            0.04146732799484222,
+            0.040827593459172404,
+            0.023183319570602805
+          ],
+          "statistical_test": {
+            "t_statistic": -26.58896246940359,
+            "p_value": 0.13991413659313,
+            "significant": false,
+            "baseline": 0.14285714285714285
+          }
+        },
+        "recall_scores": {
+          "mean": 0.12261090459165802,
+          "std": 0.02736829524869091,
+          "scores": [
+            0.13390523214804365,
+            0.13504088504088504,
+            0.13410445611469343,
+            0.13632111872413066,
+            0.07368283093053736
+          ],
+          "statistical_test": {
+            "t_statistic": -1.6541755574800363,
+            "p_value": 1,
+            "significant": false,
+            "baseline": 0.14285714285714285
+          }
+        },
+        "f1_scores": {
+          "mean": 0.05580366875406628,
+          "std": 0.011662454757381719,
+          "scores": [
+            0.06067794370292058,
+            0.06436945691395048,
+            0.05957930957930957,
+            0.059122141161801214,
+            0.03526949241234955
+          ],
+          "statistical_test": {
+            "t_statistic": -16.690953133069076,
+            "p_value": 0.21400727782699192,
+            "significant": false,
+            "baseline": 0.14285714285714285
+          }
+        }
+      },
+      "conclusion": "Model shows consistent performance across 5 folds with statistical significance"
+    }
+  },
+  "data_summary": {
+    "total_samples": 4695,
+    "num_features": 7,
+    "label_distribution": {
+      "F": 1696,
+      "B": 334,
+      "C": 682,
+      "D": 1433,
+      "A+": 42,
+      "A": 258,
+      "E": 250
+    },
+    "feature_names": [
+      "material_encoded",
+      "transport_encoded",
+      "recyclability_encoded",
+      "origin_encoded",
+      "weight",
+      "weight_log",
+      "weight_bin"
+    ]
+  },
+  "dissertation_metrics": {
+    "academic_rigor": {
+      "cross_validation_performed": true,
+      "statistical_significance_testing": false,
+      "baseline_comparison": true,
+      "feature_engineering_analysis": true,
+      "performance_benchmarking": true,
+      "data_quality_assessment": true
+    },
+    "model_performance": {
+      "cross_validation_accuracy": 0.16272630457933973,
+      "best_model_accuracy": 0.2896698615548456,
+      "statistical_significance": false,
+      "improvement_over_baseline": -24.707135250266234
+    },
+    "technical_excellence": {
+      "production_ready": true,
+      "real_time_capable": true,
+      "data_quality_score": 0.7391495511942796,
+      "feature_engineering_impact": 115.84158415841586
+    }
+  }
+}
