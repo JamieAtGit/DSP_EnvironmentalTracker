@@ -10,7 +10,8 @@
       "Bash(apt list:*)",
       "Bash(sudo apt:*)",
       "Bash(sudo apt install:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   },
