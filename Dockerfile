@@ -4,6 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+#test
 # Install Chrome dependencies and Chrome
 RUN apt-get update && apt-get install -y \
     wget \
