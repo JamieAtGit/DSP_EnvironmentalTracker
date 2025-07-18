@@ -37,7 +37,7 @@
         "https://www.amazon.com/*"
       ],
       "js": ["assets/content.js"],
-      "css": ["tooltip.css"]
+      "css": ["src/styles/tooltip.css"]
     }
   ],
 
