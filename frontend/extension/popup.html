@@ -1,12 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Eco Estimator</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <!-- ✅ Only used as entry for Vite -->
-    <script type="module" src="./popup-app/src/main.jsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Tracker</title>
+    <style>
+        body {
+            width: 350px;
+            height: 400px;
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .feature h3 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+        }
+        .feature p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 11px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌱 Environmental Tracker</h1>
+        <p>Amazon Product Impact Analysis</p>
+    </div>
+    
+    <div class="status">
+        <h3>✅ Extension Active</h3>
+        <p>Visit any Amazon product page to see environmental impact tooltips</p>
+    </div>
+    
+    <div class="feature">
+        <h3>🔍 Smart Material Detection</h3>
+        <p>Automatically identifies product materials and their environmental impact</p>
+    </div>
+    
+    <div class="feature">
+        <h3>🧠 ML-Powered Predictions</h3>
+        <p>Uses machine learning to predict eco-scores based on material, weight, and origin</p>
+    </div>
+    
+    <div class="feature">
+        <h3>📊 Carbon Footprint Estimation</h3>
+        <p>Estimates transport emissions and total carbon footprint</p>
+    </div>
+    
+    <div class="footer">
+        <p>Hover over product titles on Amazon to see environmental insights</p>
+    </div>
+</body>
 </html>

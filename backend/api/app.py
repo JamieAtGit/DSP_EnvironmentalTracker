@@ -37,6 +37,7 @@ from backend.scrapers.amazon.scrape_amazon_titles import (
     resolve_brand_origin,
     save_brand_locations
 )
+from backend.ml.prediction.efficient_predict import predict_single_product
 from backend.scrapers.amazon.scrape_amazon_titles import haversine, origin_hubs, uk_hub
 
 import csv
@@ -226,145 +227,42 @@ def predict_eco_score():
 
         recyclability = normalize_feature(data.get("recyclability"), "Medium")
 
-        # === Encode features
-        material_encoded = safe_encode(material, material_encoder, "Other")
-        transport_encoded = safe_encode(transport, transport_encoder, "Land")
-        recycle_encoded = safe_encode(recyclability, recycle_encoder, "Medium")
-        origin_encoded = safe_encode(origin, origin_encoder, "Other")
-
-        # === Bin weight (for 6th feature)
-        def bin_weight(w):
-            if w < 0.5:
-                return 0
-            elif w < 2:
-                return 1
-            elif w < 10:
-                return 2
-            else:
-                return 3
-
-        weight_bin_encoded = bin_weight(weight)
-
-        weight_log = np.log1p(weight)
-
-        # === Prepare enhanced features for 11-feature model
+        # === Use Efficient ML Prediction Method
         try:
-            # Infer additional features from title if available
-            title = data.get("title", "")
-            title_lower = title.lower()
+            print("🔧 Using efficient ML prediction method")
             
-            # Packaging type inference
-            if any(x in title_lower for x in ["bottle", "jar", "can"]):
-                packaging_type = "bottle"
-            elif any(x in title_lower for x in ["box", "pack", "carton"]):
-                packaging_type = "box"
-            else:
-                packaging_type = "other"
+            # Prepare data for efficient prediction
+            prediction_data = {
+                'material': material,
+                'weight': weight,
+                'transport': transport,
+                'recyclability': recyclability,
+                'origin': origin
+            }
             
-            # Size category inference
-            if weight > 2.0:
-                size_category = "large"
-            elif weight > 0.5:
-                size_category = "medium"
-            else:
-                size_category = "small"
+            # Get prediction using efficient method
+            ml_result = predict_single_product(prediction_data)
             
-            # Quality level inference
-            if any(x in title_lower for x in ["premium", "pro", "professional", "deluxe"]):
-                quality_level = "premium"
-            elif any(x in title_lower for x in ["basic", "standard", "regular"]):
-                quality_level = "standard"
-            else:
-                quality_level = "standard"
+            decoded_score = ml_result['eco_score']
+            confidence = ml_result['confidence']
             
-            # Pack size (number of items)
-            pack_size = 1
-            for num_word in ["2 pack", "3 pack", "4 pack", "5 pack", "6 pack", "8 pack", "10 pack", "12 pack"]:
-                if num_word in title_lower:
-                    pack_size = int(num_word.split()[0])
-                    break
+            print(f"🧠 Efficient prediction: {decoded_score} ({confidence}%)")
             
-            # Material confidence
-            material_confidence = 0.8 if material != "Other" else 0.3
+            # Create feature impact summary
+            local_impact = {
+                "material": material,
+                "transport": transport,
+                "recyclability": recyclability,
+                "origin": origin,
+                "weight": weight,
+                "method": "Efficient XGBoost with 8 features"
+            }
             
-            # Try to encode enhanced features if available
-            if packaging_type_encoder and size_category_encoder and quality_level_encoder:
-                packaging_encoded = safe_encode(packaging_type, packaging_type_encoder, "box")
-                size_encoded = safe_encode(size_category, size_category_encoder, "medium") 
-                quality_encoded = safe_encode(quality_level, quality_level_encoder, "standard")
-                
-                # Use 11-feature model
-                X = [[
-                    material_encoded,           # 1
-                    transport_encoded,          # 2
-                    recycle_encoded,           # 3
-                    origin_encoded,            # 4
-                    weight_log,                # 5
-                    weight_bin_encoded,        # 6
-                    packaging_encoded,         # 7
-                    size_encoded,              # 8
-                    quality_encoded,           # 9
-                    pack_size,                 # 10
-                    material_confidence        # 11
-                ]]
-                print(f"🔧 Using 11-feature enhanced model for prediction")
-            else:
-                raise Exception("Enhanced encoders not available")
-                
         except Exception as e:
-            print(f"⚠️ Enhanced features failed: {e}, falling back to 6 features")
-            # Fallback to 6-feature model
-            X = [[
-                material_encoded,
-                transport_encoded,
-                recycle_encoded,
-                origin_encoded,
-                weight_log,
-                weight_bin_encoded
-            ]]
-        
-        if model is None:
-            return jsonify({"error": "Model not available - please check server logs"}), 500
-            
-        prediction = model.predict(X)
-        decoded_score = label_encoder.inverse_transform([prediction[0]])[0]
-
-        print("🧠 Predicted Label:", decoded_score)
-        
-        confidence = 0.0
-        if hasattr(model, "predict_proba"):
-            proba = model.predict_proba(X)
-            print("🧪 predict_proba output:", proba)
-            print("🎯 Raw predict_proba values:", proba[0])  # <=== ADD THIS HERE
-
-            best_index = int(np.argmax(proba[0]))
-            best_label = label_encoder.inverse_transform([best_index])[0]
-            confidence = round(float(proba[0][best_index]) * 100, 1)
-
-            print(f"🧠 Most confident class: {best_label} with {confidence}%")
-
-                
-        # === Feature Importance (optional)
-        try:
-            global_importance = model.feature_importances_
-            print(f"🔍 Feature importance array length: {len(global_importance)}")
-            
-            # Safely calculate local impact for available features
-            local_impact = {}
-            if len(global_importance) >= 6:
-                local_impact = {
-                    "material": to_python_type(float(material_encoded * global_importance[0])),
-                    "transport": to_python_type(float(transport_encoded * global_importance[1])),
-                    "recyclability": to_python_type(float(recycle_encoded * global_importance[2])),
-                    "origin": to_python_type(float(origin_encoded * global_importance[3])),
-                    "weight_log": to_python_type(float(weight_log * global_importance[4])),
-                    "weight_bin": to_python_type(float(weight_bin_encoded * global_importance[5])),
-                }
-            else:
-                local_impact = {"note": "Feature importance not available for this model"}
-        except Exception as impact_error:
-            print(f"⚠️ Feature importance calculation failed: {impact_error}")
-            local_impact = {"error": "Could not calculate feature impact"}
+            print(f"⚠️ Efficient prediction failed: {e}, using fallback")
+            decoded_score = "C"
+            confidence = 50.0
+            local_impact = {"error": "Efficient prediction failed, using fallback"}
 
         # === Log the prediction
         log_submission({
@@ -391,14 +289,13 @@ def predict_eco_score():
                 "recyclability": recyclability,
                 "origin": origin
             },
-            "encoded_input": {
-                "material": to_python_type(material_encoded),
-                "weight": to_python_type(weight),
-                "transport": to_python_type(transport_encoded),
-                "recyclability": to_python_type(recycle_encoded),
-                "origin": to_python_type(origin_encoded),
-                "weight_bin": to_python_type(weight_bin_encoded)
-            },
+            "encoded_input": ml_result.get('encoded_features', {
+                "material": material,
+                "weight": weight,
+                "transport": transport,
+                "recyclability": recyclability,
+                "origin": origin
+            }),
             "feature_impact": local_impact
         })
 
@@ -1111,158 +1008,48 @@ def estimate_emissions():
             weight
         )
         
-        # === ENHANCED ML Prediction (New Method)
+        # === ENHANCED ML Prediction using Efficient Method
         ml_features_used = None
         try:
+            print("🔧 Using efficient ML prediction method for estimate_emissions")
+            
             material = product.get("material_type", "Other")
             recyclability = product.get("recyclability", "Medium")
             origin = origin_country
-
-            # === Normalize and encode for ML
-            material = normalize_feature(material, "Other")
-            recyclability = normalize_feature(recyclability, "Medium")
-            origin = normalize_feature(origin, "Other")
-            transport = transport_mode
-
-            material_encoded = safe_encode(material, material_encoder, "Other")
-            transport_encoded = safe_encode(transport, transport_encoder, "Land")
-            recycle_encoded = safe_encode(recyclability, recycle_encoder, "Medium")
-            origin_encoded = safe_encode(origin, origin_encoder, "Other")
-
-            # === Enhanced features for ML (11 features total)
-            weight_log = np.log1p(weight)
-            weight_bin_encoded = 2 if weight > 0.5 else 1 if weight > 0.1 else 0
             
-            # Infer additional features from product data
-            title_lower = product.get("title", "").lower()
+            # Prepare data for efficient prediction
+            prediction_data = {
+                'material': material,
+                'weight': weight,
+                'transport': transport_mode,
+                'recyclability': recyclability,
+                'origin': origin
+            }
             
-            # Packaging type inference
-            if any(x in title_lower for x in ["bottle", "jar", "can"]):
-                packaging_type = "bottle"
-            elif any(x in title_lower for x in ["box", "pack", "carton"]):
-                packaging_type = "box"
-            else:
-                packaging_type = "other"
+            # Get prediction using efficient method
+            ml_result = predict_single_product(prediction_data)
             
-            # Size category inference
-            if weight > 2.0:
-                size_category = "large"
-            elif weight > 0.5:
-                size_category = "medium"
-            else:
-                size_category = "small"
+            eco_score_ml = ml_result['eco_score']
+            confidence = ml_result['confidence']
             
-            # Quality level inference
-            if any(x in title_lower for x in ["premium", "pro", "professional", "deluxe"]):
-                quality_level = "premium"
-            elif any(x in title_lower for x in ["basic", "standard", "regular"]):
-                quality_level = "standard"
-            else:
-                quality_level = "standard"
-            
-            # Pack size (number of items)
-            pack_size = 1
-            for num_word in ["2 pack", "3 pack", "4 pack", "5 pack", "6 pack", "8 pack", "10 pack", "12 pack"]:
-                if num_word in title_lower:
-                    pack_size = int(num_word.split()[0])
-                    break
-            
-            # Material confidence (based on how specific the material type is)
-            material_confidence = 0.8 if material != "Other" else 0.3
-            
-            # Load enhanced encoders
-            try:
-                # Check if enhanced encoders are available
-                if packaging_type_encoder and size_category_encoder and quality_level_encoder:
-                    # Try to encode the enhanced features
-                    packaging_encoded = safe_encode(packaging_type, packaging_type_encoder, "box")
-                    size_encoded = safe_encode(size_category, size_category_encoder, "medium") 
-                    quality_encoded = safe_encode(quality_level, quality_level_encoder, "standard")
-                    
-                    # Build the full feature vector (11 features as expected by the model)
-                    X = [[
-                        material_encoded,           # 1
-                        transport_encoded,          # 2
-                        recycle_encoded,           # 3
-                        origin_encoded,            # 4
-                        weight_log,                # 5
-                        weight_bin_encoded,        # 6
-                        packaging_encoded,         # 7
-                        size_encoded,              # 8
-                        quality_encoded,           # 9
-                        pack_size,                 # 10
-                        material_confidence        # 11
-                    ]]
-                    
-                    # Show the 11 features for transparency
-                    feature_names = [
-                        "Material Type", "Transport Mode", "Recyclability", "Origin Country",
-                        "Weight (log)", "Weight Category", "Packaging Type", "Size Category", 
-                        "Quality Level", "Pack Size", "Material Confidence"
-                    ]
-                    feature_values = [
-                        material_encoded, transport_encoded, recycle_encoded, origin_encoded,
-                        weight_log, weight_bin_encoded, packaging_encoded, size_encoded,
-                        quality_encoded, pack_size, material_confidence
-                    ]
-                    
-                    print(f"🔧 Using 11 enhanced features for ML prediction:")
-                    for name, value in zip(feature_names, feature_values):
-                        print(f"   {name}: {value}")
-                    
-                    print(f"🔧 Final feature vector: {X[0]}")
-                    
-                    # Store features for response (convert numpy types)
-                    ml_features_used = {
-                        "feature_count": 11,
-                        "features": [{"name": name, "value": convert_numpy_types(value)} for name, value in zip(feature_names, feature_values)]
-                    }
-                else:
-                    raise Exception("Enhanced encoders not available")
-                
-            except Exception as enc_error:
-                print(f"⚠️ Enhanced encoder error: {enc_error}, falling back to 6 features")
-                # Fallback to original 6 features
-                X = [[
-                    material_encoded,
-                    transport_encoded,
-                    recycle_encoded,
-                    origin_encoded,
-                    weight_log,
-                    weight_bin_encoded
-                ]]
-                
-                # Store fallback features for response
-                fallback_feature_names = [
-                    "Material Type", "Transport Mode", "Recyclability", "Origin Country",
-                    "Weight (log)", "Weight Category"
-                ]
-                fallback_feature_values = [
-                    material_encoded, transport_encoded, recycle_encoded, origin_encoded,
-                    weight_log, weight_bin_encoded
-                ]
-                ml_features_used = {
-                    "feature_count": 6,
-                    "features": [{"name": name, "value": convert_numpy_types(value)} for name, value in zip(fallback_feature_names, fallback_feature_values)]
-                }
-
-            # ML Prediction
-            if model is None:
-                raise Exception("Model not available")
-            
-            prediction = model.predict(X)[0]
-            eco_score_ml = label_encoder.inverse_transform([prediction])[0]
-
-            confidence = 0.0
-            if hasattr(model, "predict_proba"):
-                proba = model.predict_proba(X)
-                confidence = round(float(np.max(proba[0])) * 100, 1)
-
-            print(f"✅ ML Score: {eco_score_ml} ({confidence}%)")
+            print(f"✅ Efficient ML Score: {eco_score_ml} ({confidence}%)")
             print(f"🔧 Rule-based Score: {eco_score_rule_based}")
+            
+            # Store features for response
+            ml_features_used = {
+                "feature_count": 8,
+                "method": "Efficient XGBoost with 8 features",
+                "features": [
+                    {"name": "Material", "value": material},
+                    {"name": "Transport", "value": transport_mode},
+                    {"name": "Recyclability", "value": recyclability},
+                    {"name": "Origin", "value": origin},
+                    {"name": "Weight", "value": weight}
+                ]
+            }
 
         except Exception as e:
-            print(f"⚠️ ML prediction failed: {e}")
+            print(f"⚠️ Efficient ML prediction failed: {e}")
             eco_score_ml = "N/A"
             confidence = None
 
@@ -1310,7 +1097,7 @@ def estimate_emissions():
                         "ml_prediction": {
                             "score": eco_score_ml,
                             "confidence": f"{confidence}%" if confidence else "N/A",
-                            "method": "Enhanced XGBoost (11 features)",
+                            "method": "Efficient XGBoost (8 features)",
                             "features_used": ml_features_used
                         },
                         "rule_based_prediction": {

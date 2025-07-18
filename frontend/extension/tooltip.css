@@ -1,0 +1,46 @@
+/* Environmental Tracker Extension Tooltip Styles */
+
+.eco-tooltip {
+  position: absolute !important;
+  z-index: 99999 !important;
+  background: rgba(0, 0, 0, 0.92) !important;
+  color: white !important;
+  padding: 15px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif !important;
+  line-height: 1.5 !important;
+  max-width: 320px !important;
+  min-width: 200px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  pointer-events: none !important;
+  word-wrap: break-word !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease, visibility 0.3s ease !important;
+}
+
+.eco-tooltip.visible {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Product title enhancement */
+[data-eco-tooltip="true"] {
+  border-bottom: 2px dotted #10b981 !important;
+  cursor: help !important;
+}
+
+/* Environmental impact colors */
+.eco-impact-high {
+  color: #ef4444 !important;
+}
+
+.eco-impact-moderate {
+  color: #f59e0b !important;
+}
+
+.eco-impact-low {
+  color: #10b981 !important;
+}

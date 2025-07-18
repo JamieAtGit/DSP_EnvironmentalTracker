@@ -1,4 +1,9 @@
 {
+    "pla": {
+      "summary": "Biodegradable plastic made from renewable resources like corn starch. Compostable in industrial facilities.",
+      "impact": "Low-Moderate",
+      "recyclable": true
+    },
     "faux leather": {
       "summary": "Plastic-based alternative to leather. Less ethical concern, but not biodegradable.",
       "impact": "Moderate",
